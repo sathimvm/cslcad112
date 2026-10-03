@@ -1,0 +1,3596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ShipView3D · Professional CAD Edition</title>
+  <link rel="stylesheet" href="./css/styles.css">
+
+</head>
+<body>
+
+<!-- ===== SECTION 21: HTML STRUCTURE ===== -->
+
+<div id="canvas-container"></div>
+
+<div id="magnifier-lens">
+  <canvas id="mag-canvas"></canvas>
+</div>
+
+<!-- FILE BAR -->
+<div id="file-bar">
+  <span style="font-weight:bold; color:var(--tb-text); opacity:0.6;">Files:</span>
+  <span id="file-list"></span>
+  <span style="flex:1;"></span>
+  <span style="display:flex; gap:12px; align-items:center; padding-right:6px;">
+    <span class="material-icons" style="font-size:16px; cursor:pointer; color:var(--tb-text); opacity:0.6;" onclick="UI.togglePanel('panel-about')" title="About ShipView3D">info_outline</span>
+    <span class="material-icons" style="font-size:16px; cursor:pointer; color:var(--tb-text); opacity:0.6;" onclick="App.showThemePanel()" title="Themes">palette</span>
+  </span>
+</div>
+
+<!-- MEASURE TOOLBAR -->
+<div id="measure-toolbar">
+  <button class="measure-btn active" data-axis="free" onclick="MeasureTool.setAxisLock('free')">Free</button>
+  <button class="measure-btn" data-axis="x" onclick="MeasureTool.setAxisLock('x')">X Lock</button>
+  <button class="measure-btn" data-axis="y" onclick="MeasureTool.setAxisLock('y')">Y Lock</button>
+  <button class="measure-btn" data-axis="z" onclick="MeasureTool.setAxisLock('z')">Z Lock</button>
+</div>
+
+<!-- ZOOM EXTENTS -->
+<button id="zoom-extents-btn" title="Zoom Extents (Space)" onclick="Camera.zoomExtents()">
+  <span class="material-icons">zoom_out_map</span>
+</button>
+
+<!-- MEASURE LABELS CONTAINER -->
+<div id="measure-labels-container"></div>
+<div id="measure-readout" class="measure-readout hidden">
+  <div class="measure-readout-header">
+    <div class="measure-readout-title">
+      <span class="material-icons">straighten</span>
+      <span>Measure</span>
+    </div>
+    <button type="button" class="measure-readout-reset" aria-label="Reset measurement" onclick="event.stopPropagation(); event.preventDefault(); MeasureTool.clear(); return false;">↺</button>
+  </div>
+  <div class="measure-readout-content">
+    <div class="measure-readout-row"><span class="measure-readout-tag">A</span><span>--</span></div>
+    <div class="measure-readout-row"><span class="measure-readout-tag">B</span><span>--</span></div>
+    <div class="measure-readout-row total"><span class="measure-readout-tag">C</span><span class="measure-readout-value">-- mm</span></div>
+  </div>
+</div>
+<div id="measure-cursor"><span class="material-icons">gps_fixed</span></div>
+
+<!-- SECTION CUT SLIDER PANEL -->
+<div id="cut-slider-panel">
+  <button class="close-slider-btn" onclick="document.getElementById('cut-slider-panel').style.display='none'">✕</button>
+  <div class="panel-title-small">Section Cuts (drag to adjust)</div>
+  <div id="cut-slider-rows"></div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div id="context-menu">
+  <button class="menu-item" data-action="zoom"><span class="material-icons">zoom_in</span> Zoom Selected</button>
+  <button class="menu-item" data-action="isolate"><span class="material-icons">filter_center_focus</span> Isolate</button>
+  <div class="menu-divider"></div>
+  <button class="menu-item" data-action="hide"><span class="material-icons">visibility_off</span> Hide</button>
+  <button class="menu-item" data-action="unhide"><span class="material-icons">visibility</span> Unhide Last</button>
+  <button class="menu-item" data-action="unhide-all"><span class="material-icons">visibility</span> Unhide All</button>
+  <div class="menu-divider"></div>
+  <button class="menu-item" data-action="disable-cuts"><span class="material-icons">grid_off</span> Disable Section Cuts</button>
+</div>
+
+<!-- ACTIONS ICON BAR (right side) -->
+<div id="actions-bar">
+  <div class="action-item" data-action="zoom">
+    <button class="icon-btn" data-action="zoom" title="Zoom Selected"><span class="material-icons">zoom_in</span></button>
+  </div>
+  <div class="action-item" data-action="isolate">
+    <button class="icon-btn" data-action="isolate" title="Isolate"><span class="material-icons">filter_center_focus</span></button>
+  </div>
+  <div class="action-item" data-action="hide">
+    <button class="icon-btn" data-action="hide" title="Hide"><span class="material-icons">visibility_off</span></button>
+  </div>
+  <div class="action-item" data-action="unhide">
+    <button class="icon-btn" data-action="unhide" title="Unhide Last"><span class="material-icons">visibility</span></button>
+  </div>
+  <div class="action-item" data-action="unhide-all">
+    <button class="icon-btn" data-action="unhide-all" title="Unhide All"><span class="material-icons">visibility</span></button>
+  </div>
+  <div class="action-item" data-action="disable-cuts">
+    <button class="icon-btn" data-action="disable-cuts" title="Disable Section Cuts"><span class="material-icons">grid_off</span></button>
+  </div>
+</div>
+
+<!-- MAIN TOOLBAR -->
+<div id="toolbar">
+  <button class="toolButton" onclick="UI.togglePanel('panel-projects')">
+    <span class="material-icons">snippet_folder</span><span class="label">Projects</span>
+  </button>
+  <button class="toolButton" onclick="App.openFile()">
+    <span class="material-icons">folder_open</span><span class="label">Open</span>
+  </button>
+  <button class="toolButton" onclick="App.addFile()">
+    <span class="material-icons">add</span><span class="label">Add</span>
+  </button>
+  <button class="toolButton active" id="btn-select" onclick="App.setTool('select')">
+    <span class="material-icons">near_me</span><span class="label">Select</span>
+  </button>
+  <button class="toolButton" id="btn-measure" onclick="App.setTool('measure')">
+    <span class="material-icons">straighten</span><span class="label">Measure</span>
+  </button>
+  
+  <div style="height:1px;width:40px;background:var(--panel-border);margin:8px 0;"></div>
+
+  <button class="toolButton" onclick="UI.togglePanel('panel-camera')">
+    <span class="material-icons">video_camera_back</span><span class="label">Camera</span>
+  </button>
+  <button class="toolButton" onclick="UI.togglePanel('panel-scenes')">
+    <span class="material-icons">photo_library</span><span class="label">Scenes</span>
+  </button>
+  <button class="toolButton" onclick="UI.togglePanel('panel-view')">
+    <span class="material-icons">visibility</span><span class="label">View</span>
+  </button>
+  <button class="toolButton" onclick="UI.togglePanel('panel-section')">
+    <span class="material-icons">content_cut</span><span class="label">Section</span>
+  </button>
+  <button class="toolButton" onclick="UI.togglePanel('panel-colors')">
+    <span class="material-icons">palette</span><span class="label">Colors</span>
+  </button>
+  <button class="toolButton" onclick="UI.togglePanel('panel-outliner')">
+    <span class="material-icons">account_tree</span><span class="label">Outliner</span>
+  </button>
+  <button class="toolButton" onclick="UI.togglePanel('panel-search')">
+    <span class="material-icons">search</span><span class="label">Search</span>
+  </button>
+  <button class="toolButton" onclick="UI.togglePanel('panel-info')">
+    <span class="material-icons">info</span><span class="label">Info</span>
+  </button>
+  <button class="toolButton" id="btn-load-sample-3dm" title="Load Sample 3DM" onclick="App.loadSample3dm()">
+    <span class="material-icons">download</span><span class="label">Sample 3DM</span>
+  </button>
+</div>
+
+<!-- ===== SECTION 22: CAMERA PANEL ===== -->
+<div id="panel-camera" class="side-panel">
+  <div class="panelTitle">Camera Tools <button class="panelClose" onclick="UI.togglePanel('panel-camera')"><span class="material-icons">close</span></button></div>
+  <div class="sectionHeader">Speeds</div>
+  <div class="control-group">
+    <label>Orbit Speed <span class="value-display" id="orbit-speed-val">1.0</span></label>
+    <input type="range" min="0.1" max="3" step="0.1" value="1.0" oninput="App.setControlSpeed('rotate', this.value)">
+  </div>
+  <div class="control-group">
+    <label>Zoom Speed <span class="value-display" id="zoom-speed-val">1.0</span></label>
+    <input type="range" min="0.1" max="3" step="0.1" value="1.0" oninput="App.setControlSpeed('zoom', this.value)">
+  </div>
+  <div class="sectionHeader">Projection</div>
+  <div class="panelItem selected" id="cam-perspective" onclick="Camera.setProjection('perspective')">Perspective <div class="red-check">✔</div></div>
+  <div class="panelItem" id="cam-orthographic" onclick="Camera.setProjection('orthographic')">Orthographic (CAD) <div class="red-check">✔</div></div>
+  <div class="sectionHeader">Navigation</div>
+  <div class="panelItem selected" id="nav-orbit" onclick="App.setNavMode('orbit')">Orbit <div class="red-check">✔</div></div>
+  <div class="panelItem" id="nav-pan" onclick="App.setNavMode('pan')">Pan <div class="red-check">✔</div></div>
+  <div class="panelItem" id="nav-zoom" onclick="App.setNavMode('zoom')">Drag Zoom <div class="red-check">✔</div></div>
+  <div class="panelItem" id="nav-position" onclick="App.setNavMode('position')">Position Camera <div class="red-check">✔</div></div>
+  <div class="panelItem" id="nav-look" onclick="App.setNavMode('look')">Look Around <div class="red-check">✔</div></div>
+</div>
+
+<!-- ===== SECTION 23: SCENES PANEL ===== -->
+<div id="panel-scenes" class="side-panel">
+  <div class="panelTitle">Scenes <button class="panelClose" onclick="UI.togglePanel('panel-scenes')"><span class="material-icons">close</span></button></div>
+  <div class="sectionHeader">Standard Views</div>
+  <div class="panelItem" onclick="Camera.zoomExtents()">Zoom Extents</div>
+  <div class="panelItem" onclick="Camera.isometric()">Isometric</div>
+  <div class="panelItem" onclick="Camera.top()">Top</div>
+  <div class="panelItem" onclick="Camera.bottom()">Bottom</div>
+  <div class="panelItem" onclick="Camera.front()">Front</div>
+  <div class="panelItem" onclick="Camera.back()">Back</div>
+  <div class="panelItem" onclick="Camera.left()">Left</div>
+  <div class="panelItem" onclick="Camera.right()">Right</div>
+</div>
+
+<!-- ===== SECTION 24: VIEW PANEL ===== -->
+<div id="panel-view" class="side-panel">
+  <div class="panelTitle">View Options <button class="panelClose" onclick="UI.togglePanel('panel-view')"><span class="material-icons">close</span></button></div>
+  
+  <!-- Display Profile -->
+  <div class="sectionHeader">Display Profile</div>
+  <div id="profile-controls">
+    <label>Screen Size <span class="value-display" id="screen-size-val">24"</span></label>
+    <input type="range" id="screen-size-slider" min="5" max="40" step="1" value="24" oninput="App.updateDisplayProfile(this.value)">
+    <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="slider-pick-btn" onclick="App.setDisplayProfile('mobile')">📱 Mobile</button>
+      <button class="slider-pick-btn" onclick="App.setDisplayProfile('laptop')">💻 Laptop</button>
+      <button class="slider-pick-btn" onclick="App.setDisplayProfile('desktop')">🖥️ Desktop</button>
+      <button class="slider-pick-btn" onclick="App.setDisplayProfile('cinema')">🎬 Cinema</button>
+    </div>
+    
+    <label style="margin-top:12px;">Thick Line Weight (px) <span class="value-display" id="thick-line-val">2.0</span></label>
+    <input type="range" id="thick-line-slider" min="0.5" max="8" step="0.5" value="2.0" oninput="App.updateThickLine(this.value)">
+    <div class="profile-row" style="margin-top:6px;">
+      <label>Manual Value:</label>
+      <input type="number" id="thick-line-input" value="2.0" step="0.5" min="0.5" max="8" onchange="App.updateThickLine(this.value)">
+    </div>
+  </div>
+
+  <!-- Edge Line Color -->
+  <div class="sectionHeader">Edge Line Color</div>
+  <div class="control-group">
+    <label>Mode:</label>
+    <select id="edge-color-mode" style="width:100%; padding:6px; background:var(--input-bg); color:var(--panel-text); border:1px solid var(--input-border); border-radius:4px;" onchange="App.updateEdgeColors()">
+      <option value="solid">All Same (Solid)</option>
+      <option value="material">By Material</option>
+      <option value="axis">By Axis (XYZ)</option>
+    </select>
+  </div>
+  <div class="control-group" id="edge-solid-color-group">
+    <label>Solid Color <input type="color" id="edge-solid-color" value="#000000" onchange="App.updateEdgeColors()" style="float:right; width:30px; height:24px; padding:0; border:none;"></label>
+  </div>
+
+  <!-- Cut Fill -->
+  <div class="sectionHeader">Section Cut Style</div>
+  <div class="control-group">
+    <label style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <span>Enable Section Edge</span>
+      <input type="checkbox" id="enable-section-edge" checked onchange="ViewEngine.toggleSectionEdgeEnabled()">
+    </label>
+  </div>
+  <div class="control-group">
+    <label>Section Edge Color <input type="color" id="section-edge-color" value="#ff1744" onchange="ViewEngine.updateSectionEdgeColor()" style="float:right; width:30px; height:24px; padding:0; border:none;"></label>
+  </div>
+  <div class="control-group">
+    <label>Section Cut Line Weight (px) <input type="range" id="section-edge-weight" min="0.5" max="8" step="0.5" value="2.0" oninput="ViewEngine.updateSectionEdgeLineWeight(this.value)" style="float:right; width:140px;"> <input type="number" id="section-edge-weight-input" value="2.0" step="0.5" min="0.5" max="8" onchange="(function(v){document.getElementById('section-edge-weight').value=v;ViewEngine.updateSectionEdgeLineWeight(v);} )(this.value)" style="width:60px; margin-left:6px;"></label>
+  </div>
+
+  <!-- Explode -->
+  <div class="sectionHeader">Explode Assembly</div>
+  <div class="control-group" style="padding-bottom:0; border-bottom:none;">
+    <label>Explode By:</label>
+    <select id="explode-by" style="width:100%; padding:6px; background:var(--input-bg); color:var(--panel-text); border:1px solid var(--input-border); border-radius:4px;" onchange="ViewEngine.setExplode(document.getElementById('explode-slider').value)">
+      <option value="part">Individual Part</option>
+      <option value="subAssy">Sub Assembly</option>
+      <option value="midAssy">Mid Assembly (Panel)</option>
+      <option value="grade">Grade / Material</option>
+      <option value="thickness">Thickness</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <label>Distance <span class="value-display" id="explode-val">0%</span></label>
+    <input type="range" id="explode-slider" min="0" max="100" value="0" oninput="ViewEngine.setExplode(this.value)">
+  </div>
+
+  <!-- Face Style -->
+  <div class="sectionHeader">Face Style</div>
+  <div class="panelItem selected" id="style-shaded" onclick="ViewEngine.setFaceStyle('shaded')">Shaded <div class="red-check">✔</div></div>
+  <div class="panelItem" id="style-xray" onclick="ViewEngine.setFaceStyle('xray')">X-Ray <div class="red-check">✔</div></div>
+  <div class="panelItem" id="style-wireframe" onclick="ViewEngine.setFaceStyle('wireframe')">Wireframe <div class="red-check">✔</div></div>
+  <div class="sectionHeader">Shading</div>
+  <div class="panelItem selected" id="shade-smooth" onclick="ViewEngine.setShadingModel(false)">Smooth <div class="red-check">✔</div></div>
+  <div class="panelItem" id="shade-flat" onclick="ViewEngine.setShadingModel(true)">Flat (CAD) <div class="red-check">✔</div></div>
+  <div class="sectionHeader">Display</div>
+  <div class="panelItem selected" id="style-edges" onclick="ViewEngine.toggleEdges()">Edges <div class="red-check">✔</div></div>
+  <div class="panelItem selected" id="style-axes" onclick="ViewEngine.toggleAxes()">World Axes <div class="red-check">✔</div></div>
+  <div class="panelItem" id="shadow-toggle" onclick="ViewEngine.toggleShadows()">Shadows <div class="red-check">✔</div></div>
+  
+  <!-- Sunlight -->
+  <div class="sectionHeader">Sunlight</div>
+  <div class="control-group">
+    <label>Azimuth <span class="value-display" id="sun-azimuth-val">45°</span></label>
+    <input type="range" id="sun-azimuth" min="0" max="360" value="45" oninput="App.updateSun()">
+  </div>
+  <div class="control-group">
+    <label>Elevation <span class="value-display" id="sun-elevation-val">30°</span></label>
+    <input type="range" id="sun-elevation" min="0" max="90" value="30" oninput="App.updateSun()">
+  </div>
+  <div class="control-group">
+    <label>Intensity <span class="value-display" id="sun-intensity-val">100%</span></label>
+    <input type="range" id="sun-intensity" min="0" max="200" value="100" oninput="App.updateSun()">
+  </div>
+
+  <!-- Selection & Theme -->
+  <div class="sectionHeader">Selection Color</div>
+  <div class="panelItem" style="justify-content:space-between;">
+    <span>Highlight</span>
+    <input type="color" id="selection-color-picker" value="#ef5350" style="width:40px;height:30px;border:none;padding:0;background:none;cursor:pointer;" onchange="App.setSelectionColor(this.value)">
+  </div>
+  
+  <div class="sectionHeader">Theme</div>
+  <div id="theme-list" style="padding: 8px 20px; display: flex; flex-wrap: wrap; gap: 6px;"></div>
+</div>
+
+<!-- ===== SECTION 25: SECTION PANEL ===== -->
+<div id="panel-section" class="side-panel">
+  <div class="panelTitle">Section Cuts <button class="panelClose" onclick="UI.togglePanel('panel-section')"><span class="material-icons">close</span></button></div>
+
+  <div class="sectionHeader" style="display:flex; justify-content:space-between; align-items:center;">
+      Anywhere Surface Slicer
+      <button class="slider-pick-btn" id="btn-section-custom" onclick="App.setTool('section-custom')"><span class="material-icons" style="font-size:16px;">ads_click</span> Plane Pick</button>
+  </div>
+  <div class="control-group">
+    <div class="axis-control" id="custom-plane-ui" style="display:none; color:#4caf50;">
+      <label><input type="checkbox" id="cut-c-enable" onchange="SectionManager.apply()" checked> Active Plane</label>
+      <label>Reverse <input type="checkbox" id="cut-c-reverse" onchange="SectionManager.apply()"></label>
+      <button class="slider-pick-btn" onclick="SectionManager.clearCustomPlane()">Clear</button>
+    </div>
+    <div id="custom-plane-hint" style="font-size:12px; opacity:0.6;">Click 'Plane Pick', hold, and drag over any 3D face to slice along its angle.</div>
+  </div>
+
+  <div class="sectionHeader">X-Axis</div>
+  <div class="control-group">
+    <div class="axis-control">
+      <label><input type="checkbox" id="cut-x-enable" onchange="SectionManager.onEnable('x')"> Enable</label>
+      <label>Reverse <input type="checkbox" id="cut-x-reverse" onchange="SectionManager.onEnable('x')"></label>
+      <label>Value: <input type="number" id="cut-x-value" value="0" step="1" style="width:80px;" onchange="SectionManager.onValue('x', this.value)"></label>
+      <button class="slider-pick-btn" id="btn-pick-x" onclick="App.setPickPlane('x')"><span class="material-icons" style="font-size:14px;">ads_click</span> Pick</button>
+    </div>
+  </div>
+  <div class="sectionHeader">Y-Axis</div>
+  <div class="control-group">
+    <div class="axis-control">
+      <label><input type="checkbox" id="cut-y-enable" onchange="SectionManager.onEnable('y')"> Enable</label>
+      <label>Reverse <input type="checkbox" id="cut-y-reverse" onchange="SectionManager.onEnable('y')"></label>
+      <label>Value: <input type="number" id="cut-y-value" value="0" step="1" style="width:80px;" onchange="SectionManager.onValue('y', this.value)"></label>
+      <button class="slider-pick-btn" id="btn-pick-y" onclick="App.setPickPlane('y')"><span class="material-icons" style="font-size:14px;">ads_click</span> Pick</button>
+    </div>
+  </div>
+  <div class="sectionHeader">Z-Axis</div>
+  <div class="control-group">
+    <div class="axis-control">
+      <label><input type="checkbox" id="cut-z-enable" onchange="SectionManager.onEnable('z')"> Enable</label>
+      <label>Reverse <input type="checkbox" id="cut-z-reverse" onchange="SectionManager.onEnable('z')"></label>
+      <label>Value: <input type="number" id="cut-z-value" value="0" step="1" style="width:80px;" onchange="SectionManager.onValue('z', this.value)"></label>
+      <button class="slider-pick-btn" id="btn-pick-z" onclick="App.setPickPlane('z')"><span class="material-icons" style="font-size:14px;">ads_click</span> Pick</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SECTION 26: COLORS PANEL ===== -->
+<div id="panel-colors" class="side-panel">
+  <div class="panelTitle">Color Mapping <button class="panelClose" onclick="UI.togglePanel('panel-colors')"><span class="material-icons">close</span></button></div>
+  <div class="sectionHeader">Strategy</div>
+  <div class="panelItem" style="flex-direction:column;align-items:stretch;padding:10px 20px;">
+    <select id="colorModeSelect" style="padding:8px;font-size:14px;border-radius:4px;background:var(--input-bg);color:var(--panel-text);border:1px solid var(--input-border);" onchange="ColorManager.onModeChange()">
+      <option value="NativeColor" selected>Native (Original) Color</option>
+      <option value="Prefix">Prefix (W, T, BP...)</option>
+      <option value="Grade">Grade / Material</option>
+      <option value="Thickness">Thickness</option>
+      <option value="MidAssy">Mid Assy (Panel)</option>
+      <option value="SubAssy">Sub Assy</option>
+      <option value="PartNumber">Individual Part</option>
+    </select>
+  </div>
+  <div class="color-toggle-header">
+    <span>Assignments</span>
+    <span class="toggle-icon material-icons" onclick="ColorManager.toggleList()">expand_less</span>
+  </div>
+  <div id="color-mapping-list" style="max-height:400px;overflow-y:auto;"></div>
+</div>
+
+<!-- ===== SECTION 27: OUTLINER PANEL ===== -->
+<div id="panel-outliner" class="side-panel">
+  <div class="panelTitle">Outliner <button class="panelClose" onclick="UI.togglePanel('panel-outliner')"><span class="material-icons">close</span></button></div>
+  <div id="outliner-content" style="padding-bottom:20px;">
+    <div class="panelItem" style="justify-content:center;color:var(--panel-text);opacity:0.6;">Load a file to view assembly.</div>
+  </div>
+</div>
+
+<!-- ===== SECTION 27.5: PROJECTS PANEL ===== -->
+<div id="panel-projects" class="side-panel">
+  <div class="panelTitle">Projects <button class="panelClose" onclick="UI.togglePanel('panel-projects')"><span class="material-icons">close</span></button></div>
+  <div class="sectionHeader">Projects Folder</div>
+    <div class="control-group" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <button class="slider-pick-btn" onclick="document.getElementById('projectsUploadFilesInput').click()">Select File</button>
+    <button id="projectsUploadBtn" class="slider-pick-btn" onclick="ProjectManager.uploadSelectedFiles()" title="Upload selected files to server">Upload</button>
+    <button class="slider-pick-btn" onclick="ProjectManager.createFolder()">New Folder</button>
+  </div>
+  <div id="projects-selected-list" style="padding-top:8px; font-size:13px; color:var(--panel-text);"></div>
+  <div class="control-group" style="padding-top:6px;">
+    <div id="project-container"><div style="padding:12px;color:var(--panel-text);opacity:0.6;">No folder loaded. Click 'Load Projects Folder'.</div></div>
+  </div>
+</div>
+
+<!-- ===== SECTION 28: SEARCH PANEL ===== -->
+<div id="panel-search" class="side-panel">
+  <div class="panelTitle">Search <button class="panelClose" onclick="UI.togglePanel('panel-search')"><span class="material-icons">close</span></button></div>
+  <div class="search-container">
+    <input type="text" id="searchInput" class="search-input" placeholder="Part No (e.g. W41)">
+    <button class="search-btn" onclick="Search.execute()">Isolate Part</button>
+    <button class="search-btn secondary" onclick="Search.reset()">Show All</button>
+    <div id="search-results" style="margin-top:14px;font-weight:500;color:var(--panel-text);"></div>
+  </div>
+</div>
+
+<!-- ===== SECTION 29: INFO PANEL ===== -->
+<div id="panel-info" class="side-panel">
+  <div class="panelTitle">Entity Info <button class="panelClose" onclick="UI.togglePanel('panel-info')"><span class="material-icons">close</span></button></div>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;" id="info-content">
+    <tr><td style="padding:18px;text-align:center;color:var(--panel-text);opacity:0.6;">Select a part in 3D (Shift+Click for multi)</td></tr>
+  </table>
+</div>
+
+<!-- ===== SECTION 29.5: ABOUT PANEL ===== -->
+<div id="panel-about" class="side-panel">
+  <div class="panelTitle">About <button class="panelClose" onclick="UI.togglePanel('panel-about')"><span class="material-icons">close</span></button></div>
+  <div style="padding: 20px; color: var(--panel-text); font-size: 14px; line-height: 1.6; overflow-y: auto;">
+    
+    <div style="text-align: center; margin-bottom: 24px;">
+      <span class="material-icons" style="font-size: 48px; color: var(--accent);">directions_boat</span>
+      <h2 style="margin: 10px 0 5px; color: var(--accent); font-family: 'Kaushan Script', cursive; font-size: 28px;">ShipView3D</h2>
+      <div style="opacity: 0.7; font-size: 11px; font-weight: 700; letter-spacing: 1px;">PROFESSIONAL CAD EDITION</div>
+      <div style="opacity: 0.5; font-size: 11px; margin-top: 4px;">Version 2.1.2</div>
+    </div>
+    
+    <div class="sectionHeader" style="padding: 10px 0 5px;">Platform Overview</div>
+    <p style="margin-top: 0; opacity: 0.9; text-align: justify;">ShipView3D is a specialized, high-performance visualization platform engineered to meet the rigorous demands of maritime architecture and dimension control. Designed as a seamless, web-based CAD viewer, it bridges the gap between complex 3D ship models and active field operations. By providing precise sectioning, axis-locked millimeter measurements, and intelligent multi-touch interactions, the application ensures structural accuracy and spatial awareness whether used on a desktop workstation or a mobile tablet directly on the shipyard floor.</p>
+
+    <div class="sectionHeader" style="padding: 15px 0 5px;">Developer</div>
+    <p style="margin-top: 0; opacity: 0.9;">
+      <strong style="color: var(--accent); font-size: 15px;">Satheesh Raghavan</strong><br>
+      Hull Dimension Control Team<br>
+      Cochin Shipyard Ltd.
+    </p>
+    <p style="margin-top: 8px; opacity: 0.9; text-align: justify;">Inspired by the principles of operational excellence and technological integration I experienced during my AOTS training in Japan, I developed this platform to streamline our dimension control workflows and bring precise, professional-grade CAD visualization directly to the hands of our shipyard teams.</p>
+  </div>
+</div>
+
+<!-- ===== SECTION 30: STATUS BAR ===== -->
+  <div id="statusbar">
+  <div class="left">
+    <span id="statusTool">Mode: Orbit</span>
+    <span id="selected-part-name">None</span>
+    <span id="selected-part-details" style="margin-left:12px; opacity:0.8; font-size:13px;"> </span>
+  </div>
+  <div class="right">
+    <span id="coord-readout">X: 0.00  Y: 0.00  Z: 0.00</span>
+  </div>
+</div>
+
+<!-- FILE INPUT -->
+<input type="file" id="fileInput" style="display:none;" accept=".3dd,.3dcsl,.dxf,.step,.stp,.3dm" multiple />
+<!-- File upload input (files only) -->
+<input type="file" id="projectsUploadFilesInput" style="display:none;" accept=".3dd,.3dcsl,.dxf,.step,.stp,.3dm" multiple />
+
+<!-- Simple file viewer for opened project files -->
+<div id="project-file-viewer" style="display:none; position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); width:80%; height:70%; background:var(--panel-bg); border:1px solid var(--panel-border); z-index:9999; padding:12px; box-shadow:0 8px 32px var(--shadow);">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div style="font-weight:700;color:var(--panel-text);" id="viewer-filename"></div>
+    <div><button class="slider-pick-btn" onclick="document.getElementById('project-file-viewer').style.display='none'">Close</button></div>
+  </div>
+  <div id="viewer-content" style="margin-top:8px; overflow:auto; height:calc(100% - 40px); background:#0f0f0f; color:#e8e8e8; padding:10px; border-radius:6px; white-space:pre-wrap; font-family:monospace;"></div>
+</div>
+<div id="loader">
+  <span id="loader-icon">⏳</span> 
+  <span id="loader-text">Parsing files …</span>
+</div>
+
+<!-- ===== SECTION 31: THREE.JS IMPORTS (local core + OrbitControls) ===== -->
+<script src="./js/lib/dxf-parser.min.js"></script>
+<script src="./js/lib/occt-import-js.js"></script>
+<script src="./js/lib/cslcad.js"></script>
+<script>
+  // Ensure Emscripten builds that read global Module.locateFile can find the WASM locally
+  window.Module = window.Module || {};
+  window.Module.locateFile = (file) => './js/lib/' + file;
+</script>
+<script src="./js/lib/rhino3dm.min.js"></script>
+<script>
+  // Extra diagnostic + manual wasmBinary init (handles servers that abort HEAD)
+  (async function(){
+    try {
+      console.log('diag2: rhino3dm type', typeof rhino3dm, ' window.Module.locateFile=', typeof window.Module?.locateFile);
+      const url = './js/lib/rhino3dm.wasm';
+      const resp = await fetch(url);
+      console.log('diag2: fetch wasm', url, 'ok=', resp.ok, 'status=', resp.status, 'content-length=', resp.headers.get('content-length'));
+      if (resp.ok) {
+        const buf = await resp.arrayBuffer();
+        console.log('diag2: wasm bytes', buf.byteLength);
+        if (typeof rhino3dm === 'function' && !window.rhinoModule) {
+          try {
+            const mod = await rhino3dm({ wasmBinary: buf });
+            window.rhinoModule = mod;
+            console.log('diag2: rhino3dm initialized via wasmBinary');
+          } catch (e) { console.warn('diag2: rhino3dm init via wasmBinary failed', e); }
+        }
+      }
+    } catch (e) { console.warn('diag2 exception', e); }
+  })();
+</script>
+<script>
+  // Diagnostic: confirm rhino3dm presence and WASM file availability
+  try {
+    console.log('diag: typeof rhino3dm ->', typeof rhino3dm, ' window.rhino3dm ->', typeof window.rhino3dm);
+    fetch('./js/lib/rhino3dm.wasm', { method: 'HEAD' }).then(r => console.log('diag: rhino3dm.wasm HEAD', r.status)).catch(e => console.warn('diag: wasm HEAD failed', e));
+  } catch (e) { console.warn('diag: rhino3dm diag exception', e); }
+</script>
+<script src="./js/orbit-controls.js"></script>
+<script src="./js/sectionManager.js"></script>
+<script src="./js/config.js"></script>
+<script src="./js/idb-storage.js"></script>
+<script src="./js/main.js"></script>
+<script src="./js/measure.js"></script>
+
+<!-- ===== SECTION 32: MAIN APPLICATION SCRIPT ===== -->
+<script>
+  "use strict";
+  // Initialize rhino3dm runtime when available
+  window.rhinoModule = null;
+  (function initRhino() {
+    try {
+      const tryWasmBinaryFallback = async (err) => {
+        console.warn('rhino3dm initial init failed, attempting wasmBinary fallback', err);
+        try {
+          const resp = await fetch('./js/lib/rhino3dm.wasm');
+          if (!resp.ok) throw new Error('WASM fetch failed: ' + resp.status);
+          const buf = await resp.arrayBuffer();
+          if (typeof rhino3dm === 'function') {
+            rhino3dm({ wasmBinary: buf }).then(m => {
+              window.rhinoModule = m;
+              console.log('rhino3dm ready (wasmBinary)');
+            }).catch(e => console.warn('rhino3dm wasmBinary init failed', e));
+          }
+        } catch (e2) { console.warn('rhino3dm wasm fallback failed', e2); }
+      };
+
+      if (typeof rhino3dm === 'function') {
+        // pass locateFile so the wasm is resolved from local js/lib/
+        rhino3dm({ locateFile: (file) => './js/lib/' + file }).then(m => {
+          window.rhinoModule = m;
+          console.log('rhino3dm ready');
+        }).catch(err => { tryWasmBinaryFallback(err); });
+      } else if (window.rhino3dm && typeof window.rhino3dm === 'object' && window.rhino3dm.ready) {
+        // some builds expose a ready promise object
+        window.rhino3dm.ready.then(m => { window.rhinoModule = m; console.log('rhino3dm ready (ready promise)'); }).catch(err => { tryWasmBinaryFallback(err); });
+      } else {
+        console.warn('rhino3dm script not found');
+      }
+    } catch (e) { console.warn('rhino3dm init exception', e); }
+  })();
+  // =====================================================
+  // SECTION 32a.5: 3DCSSL ENCRYPTION SUPPORT
+  // =====================================================
+  const ENCRYPTION_PASSWORD = "1605198804021991";
+  
+  async function decryptAES(encryptedData, password) {
+      try {
+          if (encryptedData.length < 24) {
+              console.error('Encrypted data too short:', encryptedData.length);
+              return null;
+          }
+          
+          const salt = encryptedData.slice(0, 8);
+          const iv = encryptedData.slice(8, 24);
+          const ciphertext = encryptedData.slice(24);
+          
+          console.log(`Decrypting: salt=${salt.length} bytes, iv=${iv.length} bytes, ciphertext=${ciphertext.length} bytes`);
+          
+          const enc = new TextEncoder();
+          const keyMaterial = await crypto.subtle.importKey(
+              'raw',
+              enc.encode(password),
+              'PBKDF2',
+              false,
+              ['deriveKey']
+          );
+          
+          const key = await crypto.subtle.deriveKey(
+              {
+                  name: 'PBKDF2',
+                  salt: salt,
+                  iterations: 10000,
+                  hash: 'SHA-256'
+              },
+              keyMaterial,
+              {
+                  name: 'AES-CBC',
+                  length: 256
+              },
+              false,
+              ['decrypt']
+          );
+          
+          const decrypted = await crypto.subtle.decrypt(
+              {
+                  name: 'AES-CBC',
+                  iv: iv
+              },
+              key,
+              ciphertext
+          );
+          
+          const result = new TextDecoder('utf-8').decode(decrypted);
+          console.log(`Decryption successful: ${result.length} bytes`);
+          return result;
+      } catch (e) {
+          console.error('Decryption failed:', e);
+          // Try to read as plain text
+          try {
+              const text = new TextDecoder('utf-8').decode(encryptedData);
+              if (text.includes('I obi')) {
+                  console.log('File is plain text, using as-is');
+                  return text;
+              }
+          } catch (e2) {}
+          return null;
+      }
+  }
+
+
+  // =====================================================
+  // SECTION 32a: PERSISTENCE HELPERS
+  // =====================================================
+  function saveSettings(key, data) {
+    try { localStorage.setItem('shipview_' + key, JSON.stringify(data)); } catch(e) {}
+  }
+  function loadSettings(key, def) {
+    try {
+      const raw = localStorage.getItem('shipview_' + key);
+      return raw ? JSON.parse(raw) : def;
+    } catch(e) { return def; }
+  }
+
+  // =====================================================
+  // SECTION 32b: THEMES (FIXED)
+  // =====================================================
+  const THEMES = {
+    csl: { name: 'CSL', css: 'theme-csl' },
+    ocean: { name: 'Ocean Blue', css: 'theme-ocean' },
+    dark: { name: 'Dark Mode', css: 'theme-dark' },
+    forest: { name: 'Forest Green', css: 'theme-forest' },
+    sunset: { name: 'Sunset', css: 'theme-sunset' },
+    purple: { name: 'Purple Haze', css: 'theme-purple' },
+    midnight: { name: 'Midnight', css: 'theme-midnight' },
+    warmgray: { name: 'Warm Gray', css: 'theme-warmgray' },
+    teal: { name: 'Teal', css: 'theme-teal' },
+    coral: { name: 'Coral', css: 'theme-coral' },
+    light: { name: 'Light', css: 'theme-light' }
+  };
+
+  let currentTheme = 'csl';
+  const savedTheme = loadSettings('theme', 'csl');
+  currentTheme = THEMES[savedTheme] ? savedTheme : 'csl';
+  if (savedTheme !== currentTheme) {
+    saveSettings('theme', currentTheme);
+  }
+
+  function applyTheme(themeName) {
+    const theme = THEMES[themeName];
+    if (!theme) return;
+    document.body.className = document.body.className.split(' ')
+      .filter(c => !c.startsWith('theme-')).join(' ');
+    document.body.classList.add(theme.css);
+    currentTheme = themeName;
+    saveSettings('theme', themeName);
+    document.querySelectorAll('.theme-option').forEach(el => {
+      el.style.border = el.dataset.theme === themeName ? '2px solid var(--accent)' : '2px solid var(--panel-border)';
+    });
+    // Force repaint
+    document.body.style.transform = 'scale(0.999)';
+    setTimeout(() => document.body.style.transform = '', 10);
+  }
+
+  // =====================================================
+  // SECTION 32c: CORE VIEWER
+  // =====================================================
+  const Viewer = {
+    scene: new THREE.Scene(),
+    perspCamera: new THREE.PerspectiveCamera(35, window.innerWidth/window.innerHeight, 0.1, 200000),
+    orthoCamera: new THREE.OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, 0.1, 200000),
+    camera: null,
+    isOrtho: false,
+    renderer: null,
+    controls: null,
+    sun: null,
+    sunTarget: null,
+    ambient: null,
+    hemiLight: null,
+    axes: null,
+    clippingPlanes: null,
+    emblemGroup: null,
+    emblemLoaded: false,
+    screenSize: 24,
+    thickLineWeight: 2.0,
+    
+    init() {
+      this.camera = this.perspCamera;
+      this.camera.up.set(0, 0, 1);
+      this.orthoCamera.up.set(0, 0, 1);
+      
+      this.renderer = new THREE.WebGLRenderer({ 
+          antialias: true, alpha: true, logarithmicDepthBuffer: true, 
+          preserveDrawingBuffer: true, powerPreference: "high-performance" 
+      });
+      
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.renderer.setPixelRatio(window.devicePixelRatio);
+      this.renderer.outputEncoding = THREE.sRGBEncoding;
+      this.renderer.physicallyCorrectLights = true;
+      
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      this.renderer.toneMappingExposure = 1.1;
+
+      this.renderer.shadowMap.enabled = false;
+      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      this.renderer.localClippingEnabled = false; // FIX: Start with clipping disabled
+      this.renderer.domElement.style.touchAction = 'none';
+      document.getElementById('canvas-container').appendChild(this.renderer.domElement);
+      
+      this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+      this.controls.enableDamping = false; 
+      this.controls.enableZoom = true;
+      this.controls.enableRotate = true;
+      this.controls.enablePan = true;
+      this.controls.screenSpacePanning = true;
+      this.controls.minDistance = 25.0; // Increased to give the push-through logic room to breathe
+      this.controls.maxDistance = 100000;
+      this.controls.zoomSpeed = 1.0;
+      this.controls.rotateSpeed = 1.0;
+      this.controls.touchRotate = true;
+      this.controls.touchZoom = true;
+      this.controls.touchPan = true;
+      this.controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+
+      this.sun = new THREE.DirectionalLight(0xffffff, 1.0);
+      this.sunTarget = new THREE.Object3D();
+      this.sun.target = this.sunTarget;
+      this.sunTarget.position.set(0, 0, 0);
+
+      this.sun.castShadow = true;
+      this.sun.shadow.mapSize.width = 4096;
+      this.sun.shadow.mapSize.height = 4096;
+      this.sun.shadow.bias = -0.0005;
+
+      this.scene.add(this.sun);
+      this.scene.add(this.sunTarget);
+
+      this.ambient = new THREE.AmbientLight(0xffffff, 0.6);
+      this.hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
+
+      this.scene.add(this.ambient);
+      this.scene.add(this.hemiLight);
+      
+      // Emblem: persistent rotating emblem at workspace center
+      this.emblemGroup = new THREE.Group();
+      this.emblemGroup.name = 'emblemGroup';
+      this.scene.add(this.emblemGroup);
+      
+      // try to load a local emblem file at projects/csl.3dd (relative to server root)
+      fetch('projects/csl.3dd').then(resp => {
+          if (!resp.ok) throw new Error('No emblem file');
+          return resp.text();
+      }).then(text => {
+          try {
+              const parts = Parser.collectParts(text, 'csl.3dd');
+              if (!parts || parts.length === 0) return;
+              // compute center of emblem
+              let minX = Infinity, minY = Infinity, minZ = Infinity, maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+              parts.forEach(part => {
+                  for (let j = 0; j < part.positions.length; j += 3) {
+                      const x = part.positions[j], y = part.positions[j+1], z = part.positions[j+2];
+                      if (x < minX) minX = x; if (x > maxX) maxX = x;
+                      if (y < minY) minY = y; if (y > maxY) maxY = y;
+                      if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+                  }
+              });
+              const centerX = (minX + maxX) / 2;
+              const centerY = (minY + maxY) / 2;
+              const centerZ = (minZ + maxZ) / 2;
+              parts.forEach(part => {
+                  const shifted = new Float32Array(part.positions.length);
+                  for (let j = 0; j < part.positions.length; j += 3) {
+                      shifted[j]   = part.positions[j] - centerX;
+                      shifted[j+1] = part.positions[j+1] - centerY;
+                      shifted[j+2] = part.positions[j+2] - centerZ;
+                  }
+                  const geo = new THREE.BufferGeometry();
+                  geo.setAttribute('position', new THREE.BufferAttribute(shifted, 3));
+                  if (part.indices) geo.setIndex(part.indices);
+                  geo.computeVertexNormals();
+                  // color from meta if present
+                  const meta = part.meta || {};
+                  const rawColor = meta['NCH_COLOR'] || '';
+                  let color = new THREE.Color(0x909090);
+                  if (rawColor) {
+                      const rgb = rawColor.split(' ').map(Number);
+                      if (rgb.length >= 3) color = new THREE.Color(rgb[0]/255, rgb[1]/255, rgb[2]/255);
+                  }
+                  const mat = new THREE.MeshStandardMaterial({ color, side: THREE.DoubleSide, roughness: 0.6, metalness: 0.2 });
+                  const mesh = new THREE.Mesh(geo, mat);
+                  this.emblemGroup.add(mesh);
+              });
+              // keep emblem at its natural scale and position at origin
+              this.emblemGroup.scale.setScalar(1);
+              this.emblemGroup.position.set(0,0,0);
+              this.emblemLoaded = true;
+              console.log('Emblem loaded into scene');
+
+              // Compute emblem bounds and frame it to fit the screen with padding
+              try {
+                // Only reframe the camera for emblem when there is no model present
+                if (typeof Parser === 'undefined' || !Parser.modelGroup || Parser.modelGroup.children.length === 0) {
+                  const box = new THREE.Box3().setFromObject(this.emblemGroup);
+                  if (!box.isEmpty()) {
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+                    const halfHeight = size.z / 2;
+                    const halfWidth = Math.max(size.x, size.y) / 2;
+                    const fov = (this.perspCamera && this.perspCamera.fov) ? this.perspCamera.fov * Math.PI / 180 : (35 * Math.PI / 180);
+                    const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+                    const distV = halfHeight / Math.tan(fov / 2);
+                    const distH = halfWidth / (Math.tan(fov / 2) * aspect);
+                    const distance = Math.max(distV, distH) * 1.50; // larger padding to avoid UI clipping
+                    // Position camera to the right of the emblem center and slightly above
+                    this.camera.position.set(center.x + distance, center.y, center.z + Math.max(20, distance * 0.12));
+                    this.controls.target.copy(center);
+                    this.controls.update();
+                  }
+                }
+              } catch (e) { console.warn('Emblem framing failed:', e); }
+          } catch (e) { console.warn('Failed to parse emblem:', e); }
+      }).catch(() => { /* silent if not present */ });
+      
+      this.clippingPlanes = {
+          xPos: new THREE.Plane(new THREE.Vector3(-1, 0, 0), Infinity),
+          xNeg: new THREE.Plane(new THREE.Vector3(1, 0, 0), Infinity),
+          yPos: new THREE.Plane(new THREE.Vector3(0, -1, 0), Infinity),
+          yNeg: new THREE.Plane(new THREE.Vector3(0, 1, 0), Infinity),
+          zPos: new THREE.Plane(new THREE.Vector3(0, 0, -1), Infinity),
+          zNeg: new THREE.Plane(new THREE.Vector3(0, 0, 1), Infinity),
+          custom: new THREE.Plane(new THREE.Vector3(0, 0, 1), Infinity)
+      };
+      // Set initial camera to a side (right) view so the rotating emblem is visible on app start
+      try {
+        const r = Math.max(100, Parser && Parser.modelMaxDim ? Parser.modelMaxDim * 0.6 : 300);
+        this.camera.position.set(r, 0, Math.max(50, r * 0.2));
+        this.controls.target.set(0, 0, 0);
+        this.controls.update();
+      } catch (e) { /* Parser may not be defined at parse time, ignore */ }
+      
+      applyTheme(currentTheme);
+      this.renderThemeSelector();
+      
+      const savedScreen = loadSettings('screenSize', 24);
+      const savedThick = loadSettings('thickLine', 2.0);
+      this.screenSize = savedScreen;
+      this.thickLineWeight = savedThick;
+      document.getElementById('screen-size-slider').value = savedScreen;
+      document.getElementById('screen-size-val').innerText = savedScreen + '"';
+      document.getElementById('thick-line-slider').value = savedThick;
+      document.getElementById('thick-line-input').value = savedThick;
+      document.getElementById('thick-line-val').innerText = savedThick.toFixed(1);
+      
+      this.applyThickLine(savedThick);
+    },
+
+    renderThemeSelector() {
+      const container = document.getElementById('theme-list');
+      let html = '';
+      for (let key in THEMES) {
+        const t = THEMES[key];
+        html += `
+          <div class="theme-option" data-theme="${key}" onclick="applyTheme('${key}')" style="border:2px solid ${key === currentTheme ? 'var(--accent)' : 'var(--panel-border)'};">
+            <span class="swatch" style="background:${t.css.includes('csl') ? '#28b4f4' : t.css.includes('ocean') ? '#1a2a3a' : t.css.includes('dark') ? '#1a1a1a' : t.css.includes('forest') ? '#1a2a1a' : t.css.includes('sunset') ? '#3a201a' : t.css.includes('purple') ? '#2a1a3a' : t.css.includes('midnight') ? '#0a0a1a' : t.css.includes('warmgray') ? '#2a2520' : t.css.includes('teal') ? '#0a2a2a' : t.css.includes('coral') ? '#3a1a1a' : t.css.includes('light') ? '#e8e8e8' : '#1a2a3a'}"></span>
+            <span style="font-size:12px;color:var(--panel-text);">${t.name}</span>
+          </div>
+        `;
+      }
+      container.innerHTML = html;
+    },
+
+    updateAxes(size, globalOffset) {
+      if(this.axes) this.scene.remove(this.axes);
+      const baseSize = 1;
+      const axisGroup = new THREE.Group();
+      axisGroup.userData.baseSize = baseSize;
+
+      const axes = [
+        { dir: new THREE.Vector3(1, 0, 0), color: new THREE.Color(1, 0, 0) },
+        { dir: new THREE.Vector3(0, 1, 0), color: new THREE.Color(0, 1, 0) },
+        { dir: new THREE.Vector3(0, 0, 1), color: new THREE.Color(0, 0, 1) }
+      ];
+
+      axes.forEach(axis => {
+        const lineGeo = new THREE.BufferGeometry();
+        const positions = new Float32Array([0, 0, 0, axis.dir.x * baseSize, axis.dir.y * baseSize, axis.dir.z * baseSize]);
+        const colors = new Float32Array([axis.color.r, axis.color.g, axis.color.b, axis.color.r, axis.color.g, axis.color.b]);
+        lineGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        lineGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        const lineMat = new THREE.LineBasicMaterial({ vertexColors: true, depthTest: false, transparent: true, opacity: 0.9 });
+        const line = new THREE.Line(lineGeo, lineMat);
+        axisGroup.add(line);
+
+        const coneGeo = new THREE.ConeGeometry(0.05, 0.18, 12);
+        const coneMat = new THREE.MeshBasicMaterial({ color: axis.color, depthTest: false, transparent: true, opacity: 0.9 });
+        const cone = new THREE.Mesh(coneGeo, coneMat);
+        cone.position.copy(axis.dir).multiplyScalar(baseSize - 0.1);
+        cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis.dir.clone().normalize());
+        axisGroup.add(cone);
+      });
+
+      this.axes = axisGroup;
+      if (globalOffset) {
+          this.axes.position.set(-globalOffset.x, -globalOffset.y, -globalOffset.z);
+      }
+      this.axes.traverse(child => {
+          if (child.material) {
+              child.material.depthTest = false;
+              child.material.transparent = true;
+          }
+      });
+      this.axes.frustumCulled = false;
+      this.axes.renderOrder = 1000;
+      if(ViewEngine.axesVisible) this.scene.add(this.axes);
+      this.updateAxesScreenSize();
+    },
+
+    updateAxesScreenSize() {
+      if (!this.axes || !this.camera) return;
+      const desiredPixelSize = 25;
+      let worldSize = 1;
+      if (this.camera.isPerspectiveCamera) {
+          const distance = Math.max(this.camera.position.distanceTo(this.axes.position), 0.001);
+          const vFOV = THREE.MathUtils.degToRad(this.camera.fov);
+          const frustumHeight = 2 * Math.tan(vFOV / 2) * distance;
+          worldSize = frustumHeight * (desiredPixelSize / window.innerHeight);
+      } else if (this.camera.isOrthographicCamera) {
+          const frustumHeight = this.camera.top - this.camera.bottom;
+          worldSize = frustumHeight * (desiredPixelSize / window.innerHeight);
+      }
+      const scale = Math.max(worldSize / (this.axes.userData.baseSize || 1), 0.001);
+      this.axes.scale.setScalar(scale);
+    },
+
+    updateSun(azimuthDeg, elevationDeg, intensity) {
+      const az = azimuthDeg * Math.PI / 180;
+      const el = elevationDeg * Math.PI / 180;
+      const radius = Parser.modelMaxDim * 2.5 || 1000;
+      this.sun.position.set(
+        radius * Math.cos(el) * Math.sin(az),
+        radius * Math.cos(el) * Math.cos(az),
+        radius * Math.sin(el)
+      );
+      this.sun.intensity = intensity / 100;
+    },
+    
+    applyDisplayProfile(screenSize) {
+      this.screenSize = parseFloat(screenSize);
+      document.getElementById('screen-size-val').innerText = this.screenSize + '"';
+      saveSettings('screenSize', this.screenSize);
+      
+      let maxPixelRatio = 2;
+      if (this.screenSize <= 15) maxPixelRatio = 1.5;
+      else if (this.screenSize <= 24) maxPixelRatio = 2.5;
+      else maxPixelRatio = 3.0;
+      
+      const currentRatio = this.renderer.getPixelRatio();
+      const targetRatio = Math.min(window.devicePixelRatio, maxPixelRatio);
+      if (currentRatio !== targetRatio) {
+        this.renderer.setPixelRatio(targetRatio);
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('statusTool').innerText = `Res: ${targetRatio.toFixed(1)}x`;
+      }
+    },
+    
+    applyThickLine(value) {
+      this.thickLineWeight = parseFloat(value);
+      document.getElementById('thick-line-val').innerText = this.thickLineWeight.toFixed(1);
+      document.getElementById('thick-line-slider').value = this.thickLineWeight;
+      document.getElementById('thick-line-input').value = this.thickLineWeight;
+      saveSettings('thickLine', this.thickLineWeight);
+      
+      // For LineSegments, linewidth is not supported in WebGL, but we keep it for reference.
+      Parser.modelGroup.children.forEach(mesh => {
+        mesh.children.forEach(child => {
+          if (child.name === 'edges' && child.isLineSegments) {
+            child.material.linewidth = this.thickLineWeight;
+            child.material.needsUpdate = true;
+          }
+        });
+      });
+    }
+  };
+
+  // =====================================================
+  // SECTION 32r: Rhino3dm .3dm Import Helpers
+  // =====================================================
+  async function collect3dmParts(fileBuffer, fileName) {
+    const parts = [];
+    try {
+      if (!window.rhinoModule) {
+        console.warn('rhino3dm not initialized');
+        return parts;
+      }
+      const uint8 = fileBuffer instanceof ArrayBuffer ? new Uint8Array(fileBuffer) : new Uint8Array(await fileBuffer.arrayBuffer());
+      const doc = window.rhinoModule.File3dm.fromByteArray(uint8);
+      if (!doc) return parts;
+
+      // Collect layer names/colors
+      const layerNameMap = {};
+      const layerColorMap = {};
+      try {
+        const layers = doc.layers();
+        for (let i = 0; i < layers.count; i++) {
+          const L = layers.get(i);
+          if (L) { layerNameMap[i] = L.name; if (L.color) layerColorMap[i] = `${L.color.r} ${L.color.g} ${L.color.b}`; }
+        }
+      } catch (e) {}
+
+      const objects = doc.objects();
+      for (let i = 0; i < objects.count; i++) {
+        const obj = objects.get(i);
+        if (!obj) continue;
+        const geom = obj.geometry();
+        const attr = obj.attributes ? obj.attributes() : null;
+        let mesh = null;
+
+        if (geom instanceof window.rhinoModule.Mesh) {
+          mesh = geom;
+        } else if (geom instanceof window.rhinoModule.Brep) {
+          mesh = new window.rhinoModule.Mesh();
+          try {
+            const faces = geom.faces();
+            for (let f = 0; f < faces.count; f++) {
+              try { const fm = faces.get(f).getMesh(window.rhinoModule.MeshType.Render); if (fm) mesh.append(fm); } catch (e) {}
+            }
+          } catch (e) {}
+        }
+
+        if (mesh && mesh.vertices && mesh.vertices().count > 0) {
+          const verts = mesh.vertices();
+          const faces = mesh.faces();
+          const positions = [];
+          const indices = [];
+          for (let fi = 0; fi < faces.count; fi++) {
+            const face = faces.get(fi);
+            const a = verts.get(face[0]); const b = verts.get(face[1]); const c = verts.get(face[2]);
+            const base = positions.length / 3;
+            positions.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+            indices.push(base, base + 1, base + 2);
+            if (face[3] !== face[2]) {
+              const d = verts.get(face[3]);
+              positions.push(d[0], d[1], d[2]);
+              indices.push(base, base + 2, base + 3);
+            }
+          }
+          const partName = (attr && attr.name) ? attr.name : `3DM_Part_${i+1}`;
+          const layerIndex = attr && typeof attr.layerIndex !== 'undefined' ? attr.layerIndex : null;
+          const layerName = layerIndex !== null ? (layerNameMap[layerIndex] || `Layer_${layerIndex}`) : 'Default';
+          const partColor = layerIndex !== null && layerColorMap[layerIndex] ? layerColorMap[layerIndex] : '128 128 128';
+          parts.push({ meta: { NCH_PART: partName, NCH_COLOR: partColor, subAssy: layerName, midAssy: (fileName || '').replace(/\.[^/.]+$/, ''), fileSource: fileName }, positions, indices, isLine: false, fileSource: fileName });
+        }
+      }
+
+      try { if (doc && typeof doc.delete === 'function') doc.delete(); } catch (e) {}
+    } catch (err) { console.error('collect3dmParts error', err); }
+    return parts;
+  }
+
+  // =====================================================
+  // SECTION 32d: CAMERA & NAV
+  // =====================================================
+  const Camera = {
+    setProjection(type) {
+      document.getElementById('cam-perspective').classList.remove('selected');
+      document.getElementById('cam-orthographic').classList.remove('selected');
+      document.getElementById('cam-' + type).classList.add('selected');
+      
+      const isOrtho = (type === 'orthographic');
+      if(Viewer.isOrtho === isOrtho) return;
+      
+      const oldCam = Viewer.camera;
+      const newCam = isOrtho ? Viewer.orthoCamera : Viewer.perspCamera;
+      
+      newCam.position.copy(oldCam.position);
+      newCam.rotation.copy(oldCam.rotation);
+      
+      if(isOrtho) {
+        const dist = oldCam.position.distanceTo(Viewer.controls.target);
+        const halfHeight = Math.tan( (Viewer.perspCamera.fov * Math.PI / 180) / 2 ) * dist;
+        Viewer.orthoCamera.left = -halfHeight * Viewer.perspCamera.aspect;
+        Viewer.orthoCamera.right = halfHeight * Viewer.perspCamera.aspect;
+        Viewer.orthoCamera.top = halfHeight;
+        Viewer.orthoCamera.bottom = -halfHeight;
+        Viewer.orthoCamera.updateProjectionMatrix();
+      }
+      
+      Viewer.camera = newCam;
+      Viewer.isOrtho = isOrtho;
+      Viewer.controls.object = Viewer.camera;
+      Viewer.controls.update();
+    },
+
+    fly(pos, target) { 
+        Viewer.camera.position.copy(pos); 
+        Viewer.controls.target.copy(target); 
+        
+        if (Viewer.isOrtho) {
+            const halfHeight = (Parser.modelMaxDim * 0.6);
+            Viewer.orthoCamera.left = -halfHeight * (window.innerWidth / window.innerHeight);
+            Viewer.orthoCamera.right = halfHeight * (window.innerWidth / window.innerHeight);
+            Viewer.orthoCamera.top = halfHeight;
+            Viewer.orthoCamera.bottom = -halfHeight;
+            Viewer.orthoCamera.updateProjectionMatrix();
+        }
+
+        Viewer.controls.update(); 
+        UI.closePanels(); 
+    },
+
+    getFrameDirection() {
+        const dir = new THREE.Vector3().subVectors(Viewer.camera.position, Viewer.controls.target);
+        if (dir.lengthSq() < 1e-6) return new THREE.Vector3(0.8, -1, 1).normalize();
+        return dir.normalize();
+    },
+    
+    zoomExtents() { 
+        if(!Parser.modelBox) return;
+        const box = Parser.modelBox;
+        const c = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        // Use the longest dimension for a tighter fit instead of the diagonal sphere
+        const radius = Math.max(size.x, size.y, size.z) * 0.6;
+        if (radius <= 0) return;
+        let dist = radius / Math.sin(Viewer.perspCamera.fov * Math.PI / 360);
+        if(Viewer.perspCamera.aspect < 1) dist /= Viewer.perspCamera.aspect;
+        // Use an increased padding multiplier so emblem and models avoid being clipped by top/bottom UI bars
+        // and to provide a slightly zoomed-out 'extended' view.
+        const PADDING_MULT = 1.40; // increased margin
+        dist *= PADDING_MULT;
+        const dir = this.getFrameDirection(); 
+        this.fly(c.clone().add(dir.multiplyScalar(dist)), c); 
+    },
+
+    isometric() { 
+        if(!Parser.modelBox) return;
+        const box = Parser.modelBox;
+        const c = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const radius = Math.max(size.x, size.y, size.z) * 0.6;
+        if (radius <= 0) return;
+        let dist = radius / Math.sin(Viewer.perspCamera.fov * Math.PI / 360);
+        if(Viewer.perspCamera.aspect < 1) dist /= Viewer.perspCamera.aspect;
+        const ISO_PADDING = 1.45; // keep isometric slightly zoomed out so emblem fits fully
+        dist *= ISO_PADDING;
+        const dir = new THREE.Vector3(0.8, -1, 1).normalize();
+        this.fly(c.clone().add(dir.multiplyScalar(dist)), c);
+    },
+
+    top() { const c = Parser.modelBox.getCenter(new THREE.Vector3()); this.fly(new THREE.Vector3(c.x, c.y - 0.01, c.z + Parser.modelMaxDim*1.5), c); },
+    bottom() { const c = Parser.modelBox.getCenter(new THREE.Vector3()); this.fly(new THREE.Vector3(c.x, c.y - 0.01, c.z - Parser.modelMaxDim*1.5), c); },
+    front() { const c = Parser.modelBox.getCenter(new THREE.Vector3()); this.fly(new THREE.Vector3(c.x + Parser.modelMaxDim*1.5, c.y, c.z), c); },
+    back() { const c = Parser.modelBox.getCenter(new THREE.Vector3()); this.fly(new THREE.Vector3(c.x - Parser.modelMaxDim*1.5, c.y, c.z), c); },
+    right() { const c = Parser.modelBox.getCenter(new THREE.Vector3()); this.fly(new THREE.Vector3(c.x, c.y + Parser.modelMaxDim*1.5, c.z), c); },
+    left() { const c = Parser.modelBox.getCenter(new THREE.Vector3()); this.fly(new THREE.Vector3(c.x, c.y - Parser.modelMaxDim*1.5, c.z), c); },
+    
+    frameObject(meshes) {
+      if(!Array.isArray(meshes)) meshes = [meshes];
+      if(meshes.length === 0) return;
+      const box = new THREE.Box3();
+      meshes.forEach(m => {
+          const tempMesh = m.clone();
+          tempMesh.position.copy(m.position);
+          tempMesh.updateMatrixWorld(true);
+          const mBox = new THREE.Box3().setFromObject(tempMesh);
+          box.expandByPoint(mBox.min);
+          box.expandByPoint(mBox.max);
+      });
+      const c = box.getCenter(new THREE.Vector3()); 
+      const size = box.getSize(new THREE.Vector3());
+      const radius = Math.max(size.x, size.y, size.z) * 0.6;
+      if (radius <= 0) return;
+      let dist = radius / Math.sin(Viewer.perspCamera.fov * Math.PI / 360);
+      if(Viewer.perspCamera.aspect < 1) dist /= Viewer.perspCamera.aspect;
+      const FRAME_PADDING = 1.18; // Slightly larger margin to avoid UI clipping
+      dist *= FRAME_PADDING;
+      const dir = this.getFrameDirection();
+      this.fly(c.clone().add(dir.multiplyScalar(dist)), c);
+    }
+  };
+
+  // =====================================================
+  // SECTION 32e: UI
+  // =====================================================
+  const UI = {
+    togglePanel(id) {
+      const p = document.getElementById(id);
+      if (!p) return;
+      const open = p.classList.contains('open');
+      this.closePanels();
+      if (!open) p.classList.add('open');
+    },
+    closePanels() { document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('open')); },
+    updateHUD(e) {
+      const mouse = new THREE.Vector2((e.clientX/window.innerWidth)*2-1, -(e.clientY/window.innerHeight)*2+1);
+      const raycaster = new THREE.Raycaster(); raycaster.setFromCamera(mouse, Viewer.camera);
+      const hits = raycaster.intersectObjects(Parser.modelGroup.children, false);
+      if(hits.length) {
+        const p = hits[0].point.clone().add(Parser.globalOffset);
+        document.getElementById('coord-readout').innerText = 
+          `X: ${p.x.toFixed(1)}  Y: ${p.y.toFixed(1)}  Z: ${p.z.toFixed(1)}`;
+      }
+    },
+    setLoading(msg) {
+        document.getElementById('loader').style.display = msg ? 'block' : 'none';
+        if(msg) document.getElementById('loader-text').innerText = msg;
+    }
+  };
+
+  // =====================================================
+  // SECTION 32f: VIEW ENGINE
+  // =====================================================
+  const ViewEngine = {
+    edgesVisible: true, axesVisible: true, shadowsVisible: false,
+    sectionEdgesVisible: true, sectionEdgeLineWeight: 2.0,
+    
+    setFaceStyle(mode) {
+      ['shaded','xray','wireframe'].forEach(id => document.getElementById('style-'+id).classList.remove('selected'));
+      document.getElementById('style-'+mode).classList.add('selected');
+      Parser.modelGroup.children.forEach(mesh => {
+        if(mode === 'wireframe') { mesh.material.wireframe = true; mesh.material.transparent = false; }
+        else if (mode === 'xray') { mesh.material.wireframe = false; mesh.material.transparent = true; mesh.material.opacity = 0.35; }
+        else { mesh.material.wireframe = false; mesh.material.transparent = false; mesh.material.opacity = 1; }
+        mesh.material.needsUpdate = true;
+      });
+    },
+
+    setShadingModel(isFlat) {
+      document.getElementById('shade-smooth').classList.remove('selected');
+      document.getElementById('shade-flat').classList.remove('selected');
+      document.getElementById(isFlat ? 'shade-flat' : 'shade-smooth').classList.add('selected');
+      Parser.modelGroup.children.forEach(mesh => {
+        mesh.material.flatShading = isFlat;
+        mesh.material.needsUpdate = true;
+      });
+    },
+
+    setExplode(val) {
+      const factor = parseFloat(val) / 100.0;
+      document.getElementById('explode-val').innerText = val + '%';
+      const mode = document.getElementById('explode-by').value;
+      
+      ColorManager.setExplodePartColors(mode === 'part');
+
+      const groups = {};
+      Parser.modelGroup.children.forEach(mesh => {
+          const key = mode === 'part' ? mesh.userData.partNo || mesh.uuid : mesh.userData[mode] || 'Unknown';
+          if(!groups[key]) groups[key] = { meshes: [], box: new THREE.Box3() };
+          groups[key].meshes.push(mesh);
+          
+          if (!mesh.userData.basePosition) mesh.userData.basePosition = mesh.position.clone();
+          
+          const tempMesh = mesh.clone();
+          tempMesh.position.copy(mesh.userData.basePosition);
+          tempMesh.updateMatrixWorld(true);
+          const mBox = new THREE.Box3().setFromObject(tempMesh);
+          groups[key].box.expandByPoint(mBox.min);
+          groups[key].box.expandByPoint(mBox.max);
+      });
+      
+      for (let key in groups) {
+          const group = groups[key];
+          const groupCenter = group.box.getCenter(new THREE.Vector3());
+          let dir = groupCenter.clone().normalize();
+          if (dir.lengthSq() === 0) dir.set(0, 0, 1);
+          const shift = dir.multiplyScalar(factor * Parser.modelMaxDim * 0.4);
+          
+          group.meshes.forEach(m => {
+              m.position.copy(m.userData.basePosition).add(shift);
+          });
+      }
+    },
+
+    toggleEdges() {
+      this.edgesVisible = !this.edgesVisible;
+      document.getElementById('style-edges').classList.toggle('selected');
+      Parser.modelGroup.children.forEach(m => { 
+          m.children.forEach(child => {
+              if (child.name === 'edges') child.visible = this.edgesVisible && m.visible;
+          });
+      });
+      App.updateEdgeColors();
+    },
+    toggleSectionEdgeEnabled() {
+      this.sectionEdgesVisible = document.getElementById('enable-section-edge').checked;
+      Parser.modelGroup.children.forEach(m => {
+          m.children.forEach(child => {
+              if (child.name === 'sectionEdges') child.visible = this.sectionEdgesVisible && SectionManager.hasActiveClip() && m.visible;
+          });
+      });
+    },
+    updateSectionEdgeLineWeight(val) {
+      const w = parseFloat(val) || 1.0;
+      this.sectionEdgeLineWeight = w;
+      const inp = document.getElementById('section-edge-weight-input'); if (inp) inp.value = w;
+      Parser.modelGroup.children.forEach(m => {
+        m.traverse(child => {
+          if (child.name === 'sectionEdges' && child.material) {
+            child.material.linewidth = w;
+            child.material.needsUpdate = true;
+          }
+        });
+      });
+    },
+    updateSectionEdgeColor() {
+      const hex = document.getElementById('section-edge-color').value;
+      this.sectionEdgeColor = hex;
+      Parser.modelGroup.children.forEach(m => {
+          m.traverse(child => {
+              if (child.name === 'sectionEdges' && child.material) {
+                  child.material.color.set(hex);
+              }
+          });
+      });
+    },
+    // removed section fill support
+    toggleAxes() {
+      this.axesVisible = !this.axesVisible;
+      document.getElementById('style-axes').classList.toggle('selected');
+      if(Viewer.axes) Viewer.axes.visible = this.axesVisible;
+    },
+    toggleShadows() {
+      this.shadowsVisible = !this.shadowsVisible;
+      document.getElementById('shadow-toggle').classList.toggle('selected');
+      Viewer.renderer.shadowMap.enabled = this.shadowsVisible;
+      if (this.shadowsVisible) {
+          Viewer.scene.add(Viewer.sun);
+          Viewer.scene.add(Viewer.sunTarget);
+      } else {
+          Viewer.scene.remove(Viewer.sun);
+          Viewer.scene.remove(Viewer.sunTarget);
+      }
+      Parser.modelGroup.children.forEach(m => { m.castShadow = this.shadowsVisible; m.receiveShadow = this.shadowsVisible; });
+    }
+  };
+
+    // Measure tool moved to js/measure.js
+    // =====================================================
+  // SECTION 32h: OUTLINER
+  // =====================================================
+  const Outliner = {
+    data: {},
+    build() {
+        this.data = {};
+        Parser.modelGroup.children.forEach(mesh => {
+            const meta = mesh.userData;
+            const block = meta.midAssy || 'Assembly';
+            const sub = meta.subAssy || 'Subassembly';
+            const part = meta.partName || 'Part';
+            if(!this.data[block]) this.data[block] = {};
+            if(!this.data[block][sub]) this.data[block][sub] = [];
+            this.data[block][sub].push({ name: part, mesh: mesh });
+        });
+        this.render();
+    },
+    render() {
+        let html = '';
+        for(let block in this.data) {
+            const blockId = 'b_' + block.replace(/[^a-zA-Z0-9]/g, '_');
+            const safeBlock = encodeURIComponent(block);
+            let firstMeshColor = "cccccc";
+            outerLoop: for(let s in this.data[block]) {
+                if(this.data[block][s].length > 0) {
+                    firstMeshColor = this.data[block][s][0].mesh.userData.originalColor.getHexString();
+                    break outerLoop;
+                }
+            }
+            html += `
+            <div class="outliner-item" data-node-type="block" data-node-id="${blockId}" data-block="${safeBlock}">
+                <div class="outliner-left" onclick="Outliner.toggle('${blockId}')">
+                    <span class="material-icons" id="icon-${blockId}">folder</span>
+                    <span class="outliner-label" ondblclick="App.isolateNode('${blockId}')">${block}</span>
+                </div>
+                <div class="outliner-right">
+                    <input type="color" class="outliner-color-picker" value="#${firstMeshColor}" onchange="Outliner.changeColor('block', '${safeBlock}', null, this.value, event)" onclick="event.stopPropagation()">
+                    <span class="material-icons outliner-vis-icon vis-icon-block" data-block="${safeBlock}" onclick="Outliner.toggleVisibility('block', '${safeBlock}', null, event)">visibility</span>
+                </div>
+            </div>
+            <div id="${blockId}" style="display:none;">`;
+            
+            for(let sub in this.data[block]) {
+                const subId = blockId + '_s_' + sub.replace(/[^a-zA-Z0-9]/g, '_');
+                const safeSub = encodeURIComponent(sub);
+                let subMeshColor = this.data[block][sub].length > 0 ? this.data[block][sub][0].mesh.userData.originalColor.getHexString() : "cccccc";
+                html += `
+                <div class="outliner-item" data-node-type="sub" data-node-id="${subId}" data-block="${safeBlock}" data-sub="${safeSub}">
+                    <div class="outliner-left sub" onclick="Outliner.toggle('${subId}')">
+                        <span class="material-icons" id="icon-${subId}">folder_open</span>
+                        <span class="outliner-label" ondblclick="App.isolateNode('${subId}')">${sub}</span>
+                    </div>
+                    <div class="outliner-right">
+                        <input type="color" class="outliner-color-picker" value="#${subMeshColor}" onchange="Outliner.changeColor('sub', '${safeBlock}', '${safeSub}', this.value, event)" onclick="event.stopPropagation()">
+                        <span class="material-icons outliner-vis-icon vis-icon-sub" data-block="${safeBlock}" data-sub="${safeSub}" onclick="Outliner.toggleVisibility('sub', '${safeBlock}', '${safeSub}', event)">visibility</span>
+                    </div>
+                </div>
+                <div id="${subId}" style="display:none;">`;
+                
+                this.data[block][sub].forEach(item => {
+                    const meshColor = item.mesh.userData.originalColor.getHexString();
+                    html += `
+                    <div class="outliner-item part-item" data-node-type="part" data-node-id="${item.mesh.uuid}" data-mesh-uuid="${item.mesh.uuid}">
+                        <div class="outliner-left part" onclick="App.selectMeshByUUID('${item.mesh.uuid}')">
+                            <span class="material-icons">architecture</span>
+                            <span class="outliner-label" ondblclick="App.isolateNode('${item.mesh.uuid}')">${item.name}</span>
+                        </div>
+                        <div class="outliner-right">
+                            <input type="color" class="outliner-color-picker color-picker-part" data-uuid="${item.mesh.uuid}" value="#${meshColor}" onchange="Outliner.changeColor('part', '${item.mesh.uuid}', null, this.value, event)" onclick="event.stopPropagation()">
+                            <span class="material-icons outliner-vis-icon vis-icon-part" data-uuid="${item.mesh.uuid}" onclick="Outliner.toggleVisibility('part', '${item.mesh.uuid}', null, event)">${item.mesh.visible ? 'visibility' : 'visibility_off'}</span>
+                        </div>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+            html += `</div>`;
+        }
+        document.getElementById('outliner-content').innerHTML = html || '<div class="panelItem" style="justify-content:center;color:var(--panel-text);opacity:0.6;">Load a file to view assembly.</div>';
+        this.syncUI();
+    },
+    
+    toggle(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const icon = document.getElementById('icon-' + id);
+        if(el.style.display === 'none' || el.style.display === '') {
+            el.style.display = 'block';
+            if(icon) icon.innerText = icon.innerText === 'folder' ? 'folder_open' : 'folder_open';
+        } else {
+            el.style.display = 'none';
+            if(icon) icon.innerText = icon.innerText === 'folder_open' ? 'folder' : 'folder';
+        }
+    },
+
+    changeColor(type, param1, param2, colorHex, event) {
+        if(event) event.stopPropagation();
+        try {
+            const c = new THREE.Color(colorHex);
+            if (type === 'block') {
+                const block = decodeURIComponent(param1);
+                if (!this.data[block]) return;
+                for (let sub in this.data[block]) {
+                    if (this.data[block][sub]) {
+                        this.data[block][sub].forEach(item => {
+                            if (item && item.mesh) this.setMeshColor(item.mesh, c);
+                        });
+                    }
+                }
+            } else if (type === 'sub') {
+                const block = decodeURIComponent(param1);
+                const sub = decodeURIComponent(param2);
+                if (this.data[block] && this.data[block][sub]) {
+                    this.data[block][sub].forEach(item => {
+                        if (item && item.mesh) this.setMeshColor(item.mesh, c);
+                    });
+                }
+            } else if (type === 'part') {
+                const uuid = param1;
+                const mesh = Parser.modelGroup.children.find(m => m.uuid === uuid);
+                if(mesh) this.setMeshColor(mesh, c);
+            }
+            this.syncUI();
+            if (App && App.updateEdgeColors) App.updateEdgeColors();
+        } catch(e) {
+            console.warn('Color change error:', e);
+        }
+    },
+    
+    setMeshColor(mesh, color) {
+        mesh.userData.originalColor.copy(color);
+        if (!Selection.selectedNodes.includes(mesh)) {
+            mesh.material.color.copy(color);
+        }
+    },
+    
+    toggleVisibility(type, param1, param2, event) {
+        if(event) event.stopPropagation();
+        let meshesToToggle = [];
+        try {
+            if (type === 'block') {
+                const block = decodeURIComponent(param1);
+                if (!this.data[block]) return;
+                for (let sub in this.data[block]) {
+                    if (this.data[block][sub]) {
+                        this.data[block][sub].forEach(item => {
+                            if (item && item.mesh) meshesToToggle.push(item.mesh);
+                        });
+                    }
+                }
+            } else if (type === 'sub') {
+                const block = decodeURIComponent(param1);
+                const sub = decodeURIComponent(param2);
+                if (this.data[block] && this.data[block][sub]) {
+                    this.data[block][sub].forEach(item => {
+                        if (item && item.mesh) meshesToToggle.push(item.mesh);
+                    });
+                }
+            } else if (type === 'part') {
+                const uuid = param1;
+                if (Parser && Parser.modelGroup) {
+                    const mesh = Parser.modelGroup.children.find(m => m.uuid === uuid);
+                    if (mesh) meshesToToggle.push(mesh);
+                }
+            }
+            if (meshesToToggle.length > 0) {
+                const anyVisible = meshesToToggle.some(m => m && m.visible);
+                const targetVisibility = !anyVisible;
+                meshesToToggle.forEach(m => {
+                    if (m) {
+                        m.visible = targetVisibility;
+                        if (m.children) {
+                            m.children.forEach(child => {
+                                if (child && child.name === 'edges') {
+                                    child.visible = targetVisibility && ViewEngine.edgesVisible;
+                                }
+                                if (child && child.name === 'sectionEdges') {
+                                    child.visible = targetVisibility && ViewEngine.sectionEdgesVisible && SectionManager.hasActiveClip();
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+            this.syncUI();
+            if (App && App.updateEdgeColors) App.updateEdgeColors();
+        } catch(e) {
+            console.warn('Toggle visibility error:', e);
+        }
+    },
+
+    syncUI() {
+        document.querySelectorAll('.vis-icon-part').forEach(el => {
+            const uuid = el.getAttribute('data-uuid');
+            const mesh = Parser.modelGroup.children.find(m => m.uuid === uuid);
+            if (mesh) el.innerText = mesh.visible ? 'visibility' : 'visibility_off';
+        });
+        document.querySelectorAll('.vis-icon-sub').forEach(el => {
+            const block = decodeURIComponent(el.getAttribute('data-block'));
+            const sub = decodeURIComponent(el.getAttribute('data-sub'));
+            const meshes = this.data[block]?.[sub] || [];
+            const anyVisible = meshes.some(item => item.mesh.visible);
+            el.innerText = anyVisible ? 'visibility' : 'visibility_off';
+        });
+        document.querySelectorAll('.vis-icon-block').forEach(el => {
+            const block = decodeURIComponent(el.getAttribute('data-block'));
+            let anyVisible = false;
+            for (let sub in this.data[block] || {}) {
+                if (this.data[block][sub].some(item => item.mesh.visible)) {
+                    anyVisible = true;
+                    break;
+                }
+            }
+            el.innerText = anyVisible ? 'visibility' : 'visibility_off';
+        });
+        document.querySelectorAll('.color-picker-part').forEach(el => {
+            const uuid = el.getAttribute('data-uuid');
+            const mesh = Parser.modelGroup.children.find(m => m.uuid === uuid);
+            if (mesh) el.value = '#' + mesh.userData.originalColor.getHexString();
+        });
+    }
+  };
+
+  // =====================================================
+  // SECTION 32i: COLOR MANAGER
+  // =====================================================
+  const ColorManager = {
+    colorMaps: { Prefix: {}, Grade: {}, Thickness: {}, MidAssy: {}, SubAssy: {}, PartNumber: {} },
+    currentMode: loadSettings('colorMode', 'MidAssy'),
+    listVisible: true,
+    explodeOverride: false,
+    savedMode: null,
+
+    rebuild() {
+        const maps = { Prefix: {}, Grade: {}, Thickness: {}, MidAssy: {}, SubAssy: {}, PartNumber: {} };
+        Parser.modelGroup.children.forEach(mesh => {
+            const ud = mesh.userData;
+            const catMap = {
+                Prefix: ud.prefix || 'GENERIC',
+                Grade: ud.grade || 'NoGrade',
+                Thickness: ud.thickness || 'NoThk',
+                MidAssy: ud.midAssy || 'NoMidAssy',
+                SubAssy: ud.subAssy || 'NoSubAssy',
+                PartNumber: ud.partNo || mesh.uuid || 'Unknown'
+            };
+            for (let cat in catMap) {
+                const val = catMap[cat];
+                if (!maps[cat][val]) maps[cat][val] = [];
+                maps[cat][val].push(mesh);
+            }
+        });
+        for (let cat in maps) {
+            const items = Object.keys(maps[cat]);
+            items.forEach(item => {
+                if (!this.colorMaps[cat][item]) {
+                    let hash = 0;
+                    for (let i = 0; i < item.length; i++) {
+                        hash = item.charCodeAt(i) + ((hash << 5) - hash);
+                    }
+                    const hue = ((hash % 360) / 360 + 0.5) % 1.0;
+                    const color = new THREE.Color().setHSL(hue, 0.85, 0.55);
+                    this.colorMaps[cat][item] = color.getHexString();
+                }
+            });
+        }
+        document.getElementById('colorModeSelect').value = this.currentMode;
+        if (!this.explodeOverride) {
+            this.applyMode(this.currentMode);
+        } else {
+            this.applyPartNumberColors();
+        }
+        this.renderUI();
+    },
+
+    getColorForKey(key) {
+        let hash = 0;
+        for (let i = 0; i < key.length; i++) {
+            hash = key.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const hue = ((hash % 360) / 360 + 0.5) % 1.0;
+        return new THREE.Color().setHSL(hue, 0.8, 0.55);
+    },
+
+    applyMode(mode) {
+        this.currentMode = mode;
+        saveSettings('colorMode', mode);
+        const map = this.colorMaps[mode] || {};
+        Parser.modelGroup.children.forEach(mesh => {
+            const ud = mesh.userData;
+            let color;
+            if (mode === 'NativeColor') {
+                color = (ud && ud.originalColor) ? ud.originalColor.clone() : new THREE.Color(0x808080);
+            } else {
+                let val;
+                switch(mode) {
+                    case 'Prefix': val = ud.prefix || 'GENERIC'; break;
+                    case 'Grade': val = ud.grade || 'NoGrade'; break;
+                    case 'Thickness': val = ud.thickness || 'NoThk'; break;
+                    case 'MidAssy': val = ud.midAssy || 'NoMidAssy'; break;
+                    case 'SubAssy': val = ud.subAssy || 'NoSubAssy'; break;
+                    case 'PartNumber': val = ud.partNo || 'Unknown'; break;
+                    default: val = 'Unknown';
+                }
+                const hex = map[val] || '808080';
+                color = new THREE.Color('#' + hex);
+            }
+            if (color.getHSL({}).l < 0.15) {
+                color.setHSL(color.getHSL({}).h, 0.8, 0.5);
+            }
+            mesh.userData.originalColor.copy(color);
+            if (!Selection.selectedNodes.includes(mesh)) {
+                mesh.material.color.copy(color);
+            }
+        });
+        Outliner.syncUI();
+        App.updateEdgeColors();
+    },
+
+    applyPartNumberColors() {
+        this.explodeOverride = true;
+        this.currentMode = 'PartNumber';
+        document.getElementById('colorModeSelect').value = 'PartNumber';
+        Parser.modelGroup.children.forEach(mesh => {
+            const key = mesh.userData.partNo || mesh.uuid;
+            const color = this.getColorForKey(key);
+            mesh.userData.originalColor.copy(color);
+            if (!Selection.selectedNodes.includes(mesh)) {
+                mesh.material.color.copy(color);
+            }
+        });
+        Outliner.syncUI();
+        App.updateEdgeColors();
+    },
+
+    restoreMode() {
+        if (this.explodeOverride) {
+            this.explodeOverride = false;
+            const restoreMode = this.savedMode || 'MidAssy';
+            this.savedMode = null;
+            this.applyMode(restoreMode);
+        }
+    },
+
+    setExplodePartColors(enabled) {
+        if (enabled) {
+            if (!this.explodeOverride) {
+                this.savedMode = this.currentMode;
+            }
+            this.applyPartNumberColors();
+        } else {
+            this.restoreMode();
+        }
+    },
+
+    onModeChange() {
+        const select = document.getElementById('colorModeSelect');
+        this.currentMode = select.value;
+        saveSettings('colorMode', this.currentMode);
+        this.applyMode(this.currentMode);
+        this.renderUI();
+    },
+
+    renderUI() {
+        const container = document.getElementById('color-mapping-list');
+        if (!container) return;
+        if (!this.listVisible) {
+            container.innerHTML = '';
+            return;
+        }
+        const mode = this.currentMode;
+        const map = this.colorMaps[mode] || {};
+        let html = '';
+        const sorted = Object.keys(map).sort();
+        if (sorted.length === 0) {
+            container.innerHTML = '<div style="padding:20px;text-align:center;opacity:0.6;">No items to display</div>';
+            return;
+        }
+        sorted.forEach(item => {
+            const hex = map[item] || '808080';
+            const meshes = this.getMeshesForItem(mode, item);
+            const anyVisible = meshes.some(m => m && m.visible);
+            html += `
+                <div class="color-row" data-mode="${mode}" data-item="${item}">
+                    <span class="color-label" title="${item}" onclick="ColorManager.selectItem('${mode}', '${item}')">${item}</span>
+                    <span class="eye-icon material-icons" onclick="ColorManager.toggleItemVisibility('${mode}', '${item}')">${anyVisible ? 'visibility' : 'visibility_off'}</span>
+                    <input type="color" class="color-picker-small" value="#${hex}" 
+                           onchange="ColorManager.updateColor('${mode}', '${item}', this.value)" 
+                           onclick="event.stopPropagation()">
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    },
+
+    getMeshesForItem(mode, item) {
+        const result = [];
+        if (!Parser || !Parser.modelGroup || !Parser.modelGroup.children) return result;
+        Parser.modelGroup.children.forEach(mesh => {
+            if (!mesh || !mesh.userData) return;
+            const ud = mesh.userData;
+            let val;
+            switch(mode) {
+                case 'Prefix': val = ud.prefix || 'GENERIC'; break;
+                case 'Grade': val = ud.grade || 'NoGrade'; break;
+                case 'Thickness': val = ud.thickness || 'NoThk'; break;
+                case 'MidAssy': val = ud.midAssy || 'NoMidAssy'; break;
+                case 'SubAssy': val = ud.subAssy || 'NoSubAssy'; break;
+                default: val = 'Unknown';
+            }
+            if (val === item) result.push(mesh);
+        });
+        return result;
+    },
+
+    toggleItemVisibility(mode, item) {
+        const meshes = this.getMeshesForItem(mode, item);
+        if (meshes.length === 0) return;
+        const anyVisible = meshes.some(m => m.visible);
+        const target = !anyVisible;
+        meshes.forEach(m => {
+            m.visible = target;
+            m.children.forEach(child => {
+                if (child.name === 'edges') child.visible = target && ViewEngine.edgesVisible;
+                if (child.name === 'sectionEdges') child.visible = target && ViewEngine.sectionEdgesVisible && SectionManager.hasActiveClip();
+            });
+        });
+        this.renderUI();
+        Outliner.syncUI();
+    },
+
+    selectItem(mode, item) {
+        const meshes = this.getMeshesForItem(mode, item);
+        if (meshes.length === 0) return;
+        Selection.clearSelection();
+        meshes.forEach(m => Selection.addNode(m));
+        Camera.frameObject(meshes);
+    },
+
+    updateColor(mode, item, newHex) {
+        if (newHex.startsWith('#')) newHex = newHex.substring(1);
+        this.colorMaps[mode][item] = newHex;
+        this.applyMode(mode);
+        this.renderUI();
+        Outliner.syncUI();
+        App.updateEdgeColors();
+    },
+
+    toggleList() {
+        this.listVisible = !this.listVisible;
+        const icon = document.querySelector('.color-toggle-header .toggle-icon');
+        if (icon) {
+            icon.innerText = this.listVisible ? 'expand_less' : 'expand_more';
+        }
+        this.renderUI();
+    }
+  };
+
+  // =====================================================
+  // SECTION 32j: SEARCH
+  // =====================================================
+  const Search = {
+    execute() {
+      const q = document.getElementById('searchInput').value.trim().toUpperCase();
+      if(!q) return;
+      let found = 0, last = null;
+      let foundMeshes = [];
+      Parser.modelGroup.children.forEach(mesh => {
+        const part = (mesh.userData.partName || '').toUpperCase();
+        if(part.includes(q)) { 
+            mesh.visible = true; 
+            mesh.children.forEach(c => {
+               if (c.name === 'edges') c.visible = ViewEngine.edgesVisible;
+               if (c.name === 'sectionEdges') c.visible = ViewEngine.sectionEdgesVisible && SectionManager.hasActiveClip();
+            });
+            found++; last = mesh; foundMeshes.push(mesh);
+        } else {
+            mesh.visible = false;
+            mesh.children.forEach(c => c.visible = false);
+        }
+      });
+      const el = document.getElementById('search-results');
+      if(found) { 
+          el.innerHTML = `✅ Found ${found} part(s)`; 
+          Selection.clearSelection();
+          foundMeshes.forEach(m => Selection.addNode(m));
+          Camera.frameObject(foundMeshes);
+      }
+      else el.innerHTML = '❌ Part not found';
+      Outliner.syncUI();
+      ColorManager.renderUI();
+      App.updateEdgeColors();
+    },
+    reset() { 
+        Parser.modelGroup.children.forEach(m => {
+            m.visible = true;
+            m.children.forEach(c => {
+               if (c.name === 'edges') c.visible = ViewEngine.edgesVisible;
+               if (c.name === 'sectionEdges') c.visible = ViewEngine.sectionEdgesVisible && SectionManager.hasActiveClip();
+            });
+        }); 
+        document.getElementById('searchInput').value = ''; 
+        document.getElementById('search-results').innerHTML = ''; 
+        App.clearIsolation();
+        Camera.zoomExtents(); 
+        Outliner.syncUI();
+        ColorManager.renderUI();
+        App.updateEdgeColors();
+    }
+  };
+
+  // =====================================================
+  // SECTION 32l: SELECTION
+  // =====================================================
+  const Selection = {
+    selectedNodes: [],
+    highlightColor: '#ef5350',
+
+    setHighlightColor(hex) {
+      this.highlightColor = hex;
+      const c = new THREE.Color(hex);
+      this.selectedNodes.forEach(m => { m.material.color.copy(c); });
+    },
+
+    addNode(mesh) {
+        if (!this.selectedNodes.includes(mesh)) {
+            this.selectedNodes.push(mesh);
+            mesh.material.color.copy(new THREE.Color(this.highlightColor));
+            this.updateInfoPanel();
+        } else {
+            this.selectedNodes = this.selectedNodes.filter(m => m !== mesh);
+            if (mesh.userData.originalColor) mesh.material.color.copy(mesh.userData.originalColor);
+            this.updateInfoPanel();
+        }
+    },
+    
+    updateInfoPanel() {
+        if (this.selectedNodes.length === 0) {
+            document.getElementById('selected-part-name').innerText = 'None';
+        document.getElementById('info-content').innerHTML = '<tr><td style="padding:18px;text-align:center;color:var(--panel-text);opacity:0.6;">Select a part in 3D (Shift+Click for multi)</td></tr>';
+        document.getElementById('selected-part-details').innerText = '';
+            return;
+        }
+
+        if (this.selectedNodes.length === 1) {
+            const mesh = this.selectedNodes[0];
+            document.getElementById('selected-part-name').innerText = mesh.userData.partName || 'Part';
+            const volume = computeMeshVolume(mesh);
+            const weight = volume * 7850 / 1e9;
+            const wtFromFile = mesh.userData.wt;
+            const weightDisplay = wtFromFile ? `${parseFloat(wtFromFile).toFixed(1)} kg (net)` : 
+                                  (weight > 0 ? `${weight.toFixed(1)} kg (computed)` : 'N/A');
+            const box = mesh.geometry.boundingBox;
+            const L = box.max.x - box.min.x, B = box.max.y - box.min.y, H = box.max.z - box.min.z;
+            const cogX = ((box.max.x + box.min.x)/2) + Parser.globalOffset.x;
+            const cogY = ((box.max.y + box.min.y)/2) + Parser.globalOffset.y;
+            const cogZ = ((box.max.z + box.min.z)/2) + Parser.globalOffset.z;
+
+            let html = `
+              <tr><td style="font-weight:700; color:var(--accent); text-transform:uppercase;" colspan="2">Shipyard Data</td></tr>
+              <tr><td>C.O.G (X,Y,Z)</td><td style="text-align:right; font-weight:700;">${cogX.toFixed(0)}, ${cogY.toFixed(0)}, ${cogZ.toFixed(0)}</td></tr>
+              <tr><td>Bounding (L×B×H)</td><td style="text-align:right; font-weight:700;">${L.toFixed(0)} × ${B.toFixed(0)} × ${H.toFixed(0)} mm</td></tr>
+              <tr><td>Volume</td><td style="text-align:right; font-weight:700;">${(volume/1e9).toFixed(6)} m³</td></tr>
+              <tr><td>Weight</td><td style="text-align:right; font-weight:700;">${weightDisplay}</td></tr>
+              <tr><td style="font-weight:700; color:var(--accent); border-top:2px solid var(--panel-border); text-transform:uppercase;" colspan="2">Metadata</td></tr>
+            `;
+            for(let k in mesh.userData) {
+              if(['originalColor','partName','partNo','thickness','grade','midAssy','subAssy','subpanel','prefix','wt','fileSource','basePosition'].includes(k)) continue;
+              html += `<tr><td>${k}</td><td style="text-align:right; font-weight:500;">${mesh.userData[k]}</td></tr>`;
+            }
+            document.getElementById('info-content').innerHTML = html;
+            // Update compact bottom-bar details for quick glance (name, no, thk, grade, file, dims, weight)
+            const detailParts = [];
+            if (mesh.userData.partName) detailParts.push(mesh.userData.partName);
+            if (mesh.userData.partNo) detailParts.push('No: ' + mesh.userData.partNo);
+            if (mesh.userData.thickness) detailParts.push(mesh.userData.thickness + 'mm');
+            if (mesh.userData.grade) detailParts.push(mesh.userData.grade);
+            if (mesh.userData.fileSource) detailParts.push(mesh.userData.fileSource);
+            detailParts.push(`${L.toFixed(0)}×${B.toFixed(0)}×${H.toFixed(0)} mm`);
+            detailParts.push(weightDisplay);
+            document.getElementById('selected-part-details').innerText = detailParts.join(' • ');
+        } else {
+            document.getElementById('selected-part-name').innerText = `${this.selectedNodes.length} items selected`;
+            let totalWeight = 0;
+            this.selectedNodes.forEach(m => {
+                const w = parseFloat(m.userData.wt);
+                if (!isNaN(w)) totalWeight += w;
+                else totalWeight += (computeMeshVolume(m) * 7850 / 1e9);
+            });
+            document.getElementById('info-content').innerHTML = `
+              <tr><td style="font-weight:700; color:var(--accent); text-transform:uppercase;" colspan="2">Multi-Selection</td></tr>
+              <tr><td>Parts Selected</td><td style="text-align:right; font-weight:700;">${this.selectedNodes.length}</td></tr>
+              <tr><td>Estimated Weight</td><td style="text-align:right; font-weight:700;">${totalWeight.toFixed(1)} kg</td></tr>
+            `;
+            document.getElementById('selected-part-details').innerText = `${this.selectedNodes.length} items • ${totalWeight.toFixed(1)} kg`;
+        }
+    },
+
+    clearSelection() {
+        this.selectedNodes.forEach(m => {
+            if (m.userData.originalColor) m.material.color.copy(m.userData.originalColor);
+        });
+        this.selectedNodes = [];
+        this.updateInfoPanel();
+    }
+  };
+
+  function computeMeshVolume(mesh) {
+    const geo = mesh.geometry;
+    if (!geo) return 0;
+    const pos = geo.attributes.position;
+    const idx = geo.index;
+    if (!pos || !idx) return 0;
+    let volume = 0;
+    const v = new THREE.Vector3();
+    const a = new THREE.Vector3();
+    const b = new THREE.Vector3();
+    const c = new THREE.Vector3();
+    for (let i = 0; i < idx.count; i += 3) {
+        const i0 = idx.getX(i); const i1 = idx.getX(i+1); const i2 = idx.getX(i+2);
+        a.fromBufferAttribute(pos, i0); b.fromBufferAttribute(pos, i1); c.fromBufferAttribute(pos, i2);
+        v.crossVectors(b, c); volume += a.dot(v);
+    }
+    return Math.abs(volume) / 6;
+  }
+
+  // =====================================================
+  // SECTION 32m: PARSER (using standard LineSegments)
+  // =====================================================
+  const Parser = {
+    modelGroup: new THREE.Group(), 
+    modelMaxDim: 1000, 
+    modelBox: null, 
+    globalOffset: new THREE.Vector3(0,0,0),
+    fileDataList: [],
+    bbox: { min: new THREE.Vector3(0,0,0), max: new THREE.Vector3(0,0,0) },
+    
+    init() {
+      Viewer.scene.add(this.modelGroup);
+    },
+
+    collectParts(text, fileName) {
+      const lines = text.split('\n');
+      const parts = [];
+      let i = 0;
+      while(i < lines.length) {
+          let line = lines[i].trim();
+          if(line.startsWith('I obi')) {
+              let meta = {};
+              line.split(';').forEach(p => {
+                  let segment = p.trim();
+                  if (segment.startsWith('I obi ')) {
+                      segment = segment.substring(6).trim();
+                  }
+                  const idx = segment.indexOf(' ');
+                  if (idx > 0) {
+                      meta[segment.substring(0, idx).trim()] = segment.substring(idx + 1).trim();
+                  }
+              });
+              while(i < lines.length && !lines[i].trim().startsWith('fs ')) i++;
+              if(i >= lines.length) break;
+              const fsParts = lines[i].trim().split(/\s+/);
+              const vCount = parseInt(fsParts[1], 10), fCount = parseInt(fsParts[2], 10);
+              let geomLines = []; i++;
+              while(i < lines.length && !lines[i].trim().startsWith('I obi')) { 
+                  geomLines.push(lines[i]); i++; 
+              }
+              const tokens = geomLines.join(' ').replace(/#/g,'').trim().split(/\s+/);
+              let t=0, positions=[], indices=[];
+              for(let j=0; j<vCount*3 && t<tokens.length; j++) positions.push(parseFloat(tokens[t++]));
+              let facesParsed=0;
+              while(facesParsed < fCount && t < tokens.length) {
+                  const poly = parseInt(tokens[t++], 10);
+                  if(poly === 3) { indices.push(parseInt(tokens[t++], 10), parseInt(tokens[t+1], 10), parseInt(tokens[t+3], 10)); t+=5; facesParsed++; }
+                  else if(poly === 4) { let a=parseInt(tokens[t++], 10); t++; let b=parseInt(tokens[t++], 10); t++; let c=parseInt(tokens[t++], 10); t++; let d=parseInt(tokens[t++], 10); t++; indices.push(a,b,c,a,c,d); facesParsed++; }
+                  else { let f=[]; for(let p=0;p<poly;p++){ f.push(parseInt(tokens[t++], 10)); t++; } for(let p=1;p<poly-1;p++) indices.push(f[0],f[p],f[p+1]); facesParsed++; }
+              }
+              if(positions.length && indices.length) {
+                  parts.push({ meta, positions, indices, fileSource: fileName });
+              }
+          } else i++;
+      }
+      return parts;
+    },
+
+    collectDxfParts(dxfText, fileName) {
+      const parts = [];
+      try {
+        if (typeof DxfParser === 'undefined') {
+          console.error('DxfParser not loaded');
+          return parts;
+        }
+        const parser = new DxfParser();
+        const dxf = typeof parser.parseSync === 'function' ? parser.parseSync(dxfText) : parser.parse(dxfText);
+        const base = (fileName || 'dxf').replace(/\.[^/.]+$/, '');
+        let idx = 0;
+
+        // Map ACI (AutoCAD Color Index) or numeric color to RGB string "R G B".
+        const aciToRgb = (idx) => {
+          if (!Number.isFinite(Number(idx))) return null;
+          const i = Number(idx);
+          if (i <= 0) return null;
+          // Common ACI 1-7 standard mapping
+          const aciStd = {
+            1: [255,0,0], 2: [255,255,0], 3: [0,255,0], 4: [0,255,255], 5: [0,0,255], 6: [255,0,255], 7: [255,255,255]
+          };
+          if (aciStd[i]) return aciStd[i];
+          // For other indices, derive a stable color via hue hashing
+          const hue = (i * 137) % 360; // golden-angle-ish spread
+          const col = new THREE.Color(); col.setHSL(hue/360, 0.65, 0.5);
+          return [Math.round(col.r*255), Math.round(col.g*255), Math.round(col.b*255)];
+        };
+
+        // Build layer->color map from parser tables when available
+        const layerColorMap = {};
+        try {
+          if (dxf) {
+            if (dxf.tables && dxf.tables.LAYER && Array.isArray(dxf.tables.LAYER)) {
+              dxf.tables.LAYER.forEach(l => { if (l && l.name) layerColorMap[l.name] = l.color ?? l.colorIndex ?? null; });
+            } else if (dxf.layers && Array.isArray(dxf.layers)) {
+              dxf.layers.forEach(l => { if (l && l.name) layerColorMap[l.name] = l.color ?? l.colorIndex ?? null; });
+            }
+          }
+        } catch (e) { /* ignore */ }
+
+        const entityColor = (e) => {
+          if (!e) return '';
+          const candidate = (typeof e.color !== 'undefined' && e.color !== null) ? e.color : (typeof e.colorIndex !== 'undefined' ? e.colorIndex : null);
+          let rgb = null;
+          if (candidate !== null) rgb = aciToRgb(candidate);
+          if (!rgb && e.layer) {
+            const lc = layerColorMap[e.layer] ?? layerColorMap[e.layerName] ?? null;
+            if (lc !== null && typeof lc !== 'undefined') rgb = aciToRgb(lc);
+          }
+          if (!rgb) return '';
+          return `${rgb[0]} ${rgb[1]} ${rgb[2]}`;
+        };
+
+        const isValidPoint = v => {
+          if (!v || typeof v !== 'object') return false;
+          const x = Number(v.x); const y = Number(v.y); const z = Number(v.z ?? 0);
+          return Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z);
+        };
+
+        const buildLinePart = (verts, partNamePrefix, closed = false, entityMeta = {}) => {
+          const pts = (verts || []).filter(isValidPoint).map(v => [Number(v.x), Number(v.y), Number(v.z ?? 0)]);
+          if (pts.length < 2) return;
+
+          const positions = pts.flat();
+          const indices = [];
+          for (let i = 0; i < pts.length - 1; i++) indices.push(i, i + 1);
+          if (closed && pts.length > 1) indices.push(pts.length - 1, 0);
+
+          parts.push({
+            meta: {
+              NCH_PART: partNamePrefix + (idx ? `_${idx}` : ''),
+              mergeGroup: partNamePrefix,
+              midAssy: (partNamePrefix && partNamePrefix.split && partNamePrefix.split('_')[0]) ? partNamePrefix.split('_')[0] : base,
+              ...entityMeta
+            },
+            positions,
+            indices,
+            isLine: true,
+            fileSource: fileName
+          });
+          idx++;
+        };
+
+        const processEntities = (ents, partNamePrefix) => {
+          if (!ents || !Array.isArray(ents)) return;
+          ents.forEach(e => {
+            if (!e || !e.type) return;
+
+            // Group all entities belonging to this block/layer under the exact same base name
+            const entityPartBase = partNamePrefix;
+
+            if (e.type === '3DFACE' || e.type === 'SOLID' || e.type === 'TRACE') {
+              const verts = e.vertices || e.points || [];
+              const pts = verts.filter(isValidPoint).map(v => [Number(v.x), Number(v.y), Number(v.z ?? 0)]);
+              if (pts.length < 3) return;
+
+              const positions = pts.flat();
+              const indices = [];
+              if (pts.length === 3) indices.push(0, 1, 2);
+              else if (pts.length === 4) indices.push(0, 1, 2, 0, 2, 3);
+              else for (let i = 1; i < pts.length - 1; i++) indices.push(0, i, i + 1);
+
+              const color = entityColor(e);
+              parts.push({
+                meta: {
+                  NCH_PART: `${entityPartBase}_${idx}`,
+                  mergeGroup: entityPartBase,
+                  midAssy: partNamePrefix || base,
+                  subAssy: e.layer || 'Faces',
+                  ...(color ? { NCH_COLOR: color } : {})
+                },
+                positions,
+                indices,
+                isLine: false,
+                fileSource: fileName
+              });
+              idx++;
+              return;
+            }
+
+            if (e.type === 'LINE') {
+              const lineVerts = (Array.isArray(e.vertices) && e.vertices.length > 0)
+                ? e.vertices
+                : ((e.start || e.from) && (e.end || e.to) ? [e.start || e.from, e.end || e.to] : []);
+              const color = entityColor(e);
+              buildLinePart(lineVerts, entityPartBase, false, color ? { NCH_COLOR: color } : {});
+              return;
+            }
+
+            if (e.type === 'POLYLINE' || e.type === 'LWPOLYLINE') {
+              const isPolyface = !!(e.isPolyfaceMesh || e.is3dPolygonMesh || (Array.isArray(e.faces) && e.faces.length > 0));
+
+              if (isPolyface) {
+                const vMap = e.vertices || [];
+                const pts = vMap.filter(isValidPoint).map(v => [Number(v.x), Number(v.y), Number(v.z ?? 0)]);
+                if (pts.length < 3) return;
+
+                const positions = pts.flat();
+                const indices = [];
+                (e.faces || []).forEach(f => {
+                  const fv = f.vertexIndices || f.vertices;
+                  if (Array.isArray(fv) && fv.length >= 3) {
+                    if (fv.length === 3) indices.push(fv[0], fv[1], fv[2]);
+                    else if (fv.length === 4) indices.push(fv[0], fv[1], fv[2], fv[0], fv[2], fv[3]);
+                    else for (let i = 1; i < fv.length - 1; i++) indices.push(fv[0], fv[i], fv[i + 1]);
+                  }
+                });
+
+                if (indices.length > 0) {
+                  const color = entityColor(e);
+                  parts.push({
+                    meta: {
+                      NCH_PART: `${entityPartBase}_${idx}`,
+                      mergeGroup: entityPartBase,
+                      midAssy: partNamePrefix || base,
+                      subAssy: e.layer || 'Faces',
+                      ...(color ? { NCH_COLOR: color } : {})
+                    },
+                    positions,
+                    indices,
+                    isLine: false,
+                    fileSource: fileName
+                  });
+                  idx++;
+                }
+                return;
+              }
+
+              buildLinePart(e.vertices || e.points || [], entityPartBase, !!(e.shape || e.closed));
+            }
+          });
+        };
+
+        // helper to extract a nicer group label from entities (ATTRIB/TEXT/INSERT attributes)
+        const extractGroupLabel = (fallbackName, ents) => {
+          if (!ents || !Array.isArray(ents)) return fallbackName;
+          for (let i = 0; i < ents.length; i++) {
+            const ee = ents[i];
+            if (!ee) continue;
+            if (ee.type === 'ATTRIB' || ee.type === 'ATTDEF') {
+              if (ee.text) return String(ee.text).trim();
+              if (ee.value) return String(ee.value).trim();
+            }
+            if ((ee.type === 'TEXT' || ee.type === 'MTEXT') && ee.text) return String(ee.text).trim();
+            // INSERT may have attributes array depending on parser
+            if (ee.type === 'INSERT' && Array.isArray(ee.attributes) && ee.attributes.length) {
+              for (let a of ee.attributes) if (a && (a.text || a.value)) return String(a.text || a.value).trim();
+            }
+          }
+          return fallbackName;
+        };
+
+        if (dxf && dxf.blocks && Object.keys(dxf.blocks).length) {
+          // If blocks are defined, use each block as a group/part (preferred)
+          Object.values(dxf.blocks).forEach(block => {
+            const name = block.name || base;
+            const label = extractGroupLabel(name, block.entities);
+            processEntities(block.entities, label);
+          });
+        } else if (dxf && dxf.entities) {
+          // Fallback: Group top-level entities by block/name/layer so each group becomes its own part name
+          const topGroups = {};
+          dxf.entities.forEach(e => {
+            if (!e) return;
+            const g = (e.block && typeof e.block === 'string' && e.block.trim()) || (e.name && typeof e.name === 'string' && e.name.trim()) || (e.layer && typeof e.layer === 'string' && e.layer.trim()) || base;
+            if (!topGroups[g]) topGroups[g] = [];
+            topGroups[g].push(e);
+          });
+          Object.keys(topGroups).forEach(g => {
+            const label = extractGroupLabel(g, topGroups[g]);
+            processEntities(topGroups[g], label);
+          });
+        }
+        // blocks already processed above when present
+        // Fallback: if dxf-parser didn't expose PolyFace faces, parse raw DXF text
+        try {
+          const raw = dxfText || '';
+          if (raw && raw.indexOf('AcDbPolyFaceMesh') !== -1) {
+            const lines = raw.split(/\r?\n/);
+            // build a map of BLOCK name active at each line index (simple scan)
+            const blockNameAt = new Array(lines.length).fill('');
+            let inBlock = false;
+            let curBlockName = '';
+            for (let bi = 0; bi < lines.length; bi++) {
+              const tt = String(lines[bi] || '').trim();
+              if (tt === 'BLOCK') { inBlock = true; curBlockName = ''; }
+              if (inBlock && tt === '2' && bi + 1 < lines.length) { curBlockName = String(lines[bi + 1] || '').trim(); }
+              if (inBlock) blockNameAt[bi] = curBlockName;
+              if (tt === 'ENDBLK') { inBlock = false; curBlockName = ''; }
+            }
+            for (let i = 0; i < lines.length; i++) {
+              if (lines[i].trim() === 'POLYLINE') {
+                // look ahead to block end
+                let j = i + 1; let isMesh = false;
+                while (j < lines.length && !lines[j].trim().startsWith('SEQEND')) {
+                  if (lines[j].includes('AcDbPolyFaceMesh')) isMesh = true;
+                  j++;
+                }
+                if (!isMesh) continue;
+                const blockLines = lines.slice(i, j + 1);
+                const verts = [];
+                const faces = [];
+                for (let k = 0; k < blockLines.length; k++) {
+                  const ln = blockLines[k].trim();
+                  if (ln === 'VERTEX') {
+                    // scan for PolyFaceMeshVertex or FaceRecord
+                    let m = k + 1;
+                    let vx = null, vy = null, vz = null;
+                    let isVert = false, isFace = false;
+                    while (m < blockLines.length && blockLines[m].trim() !== 'VERTEX' && blockLines[m].trim() !== 'SEQEND') {
+                      const l = blockLines[m].trim();
+                      if (l.includes('AcDbPolyFaceMeshVertex')) isVert = true;
+                      if (l.includes('AcDbFaceRecord')) isFace = true;
+                      if (l === '10' && (m+1) < blockLines.length) vx = parseFloat(blockLines[m+1]);
+                      if (l === '20' && (m+1) < blockLines.length) vy = parseFloat(blockLines[m+1]);
+                      if (l === '30' && (m+1) < blockLines.length) vz = parseFloat(blockLines[m+1]);
+                      if ((l === '71' || l === '72' || l === '73') && (m+1) < blockLines.length) {
+                        // collect face indices nearby
+                        // handled below when isFace true
+                      }
+                      m++;
+                    }
+                    if (isVert && vx !== null && vy !== null && vz !== null) verts.push([vx, vy, vz]);
+                    if (isFace) {
+                      // collect indices for this face record
+                      let n = k + 1; const idxs = [];
+                      while (n < blockLines.length && blockLines[n].trim() !== 'VERTEX' && blockLines[n].trim() !== 'SEQEND') {
+                        const code = blockLines[n].trim();
+                        if ((code === '71' || code === '72' || code === '73') && (n+1) < blockLines.length) idxs.push(parseInt(blockLines[n+1], 10));
+                        n++;
+                      }
+                      if (idxs.length >= 3) faces.push(idxs);
+                    }
+                  }
+                  // also handle standalone AcDbFaceRecord lines
+                  if (blockLines[k].includes('AcDbFaceRecord')) {
+                    let n = k; const idxs = [];
+                    while (n < blockLines.length && blockLines[n].trim() !== 'VERTEX' && blockLines[n].trim() !== 'SEQEND') {
+                      const code = blockLines[n].trim();
+                      if ((code === '71' || code === '72' || code === '73') && (n+1) < blockLines.length) idxs.push(parseInt(blockLines[n+1], 10));
+                      n++;
+                    }
+                    if (idxs.length >= 3) faces.push(idxs);
+                  }
+                }
+                if (verts.length >= 3 && faces.length > 0) {
+                  const positions = verts.flat();
+                  const indices = [];
+                  faces.forEach(f => {
+                    const mapped = f.map(v => Math.abs(Number(v)) - 1);
+                    if (mapped.length === 3) indices.push(mapped[0], mapped[1], mapped[2]);
+                    else if (mapped.length === 4) indices.push(mapped[0], mapped[1], mapped[2], mapped[0], mapped[2], mapped[3]);
+                    else for (let t = 1; t < mapped.length - 1; t++) indices.push(mapped[0], mapped[t], mapped[t+1]);
+                  });
+                  if (indices.length > 0) {
+                    // attempt to read layer and color group codes from blockLines
+                    let layerName = '';
+                    let colorIdx = null;
+                    for (let z = 0; z < blockLines.length; z++) {
+                      const code = String(blockLines[z] || '').trim();
+                      if (code === '8' && z + 1 < blockLines.length) layerName = String(blockLines[z+1] || '').trim();
+                      if (code === '62' && z + 1 < blockLines.length) colorIdx = parseInt(blockLines[z+1], 10);
+                    }
+                    const blockLabel = (blockNameAt[i] && blockNameAt[i].trim()) ? blockNameAt[i].trim() : base;
+                    let partLabel = layerName ? `${blockLabel}_${layerName}` : `${blockLabel}_polyface`;
+                    let meta = { NCH_PART: `${partLabel}_${i}`, mergeGroup: partLabel };
+                    if (layerName) meta.DXF_LAYER = layerName;
+                    const rgb = (typeof colorIdx === 'number' && Number.isFinite(colorIdx)) ? aciToRgb(colorIdx) : (layerName && layerColorMap[layerName] ? aciToRgb(layerColorMap[layerName]) : null);
+                    if (rgb) meta.NCH_COLOR = `${rgb[0]} ${rgb[1]} ${rgb[2]}`;
+                    parts.push({ meta, positions, indices, isLine: false, fileSource: fileName });
+                    idx++;
+                  }
+                }
+                i = j;
+              }
+            }
+          }
+        } catch (e) { console.warn('collectDxfParts: raw fallback failed', e); }
+      } catch (err) { console.error('collectDxfParts', err); }
+
+      // --- MERGE FRAGMENTED DXF PARTS INTO SINGLE ENTITIES ---
+      const mergedMap = new Map();
+      parts.forEach(p => {
+        // Use the explicit mergeGroup defined during parsing
+        let baseName = p.meta && (p.meta.mergeGroup || p.meta.NCH_PART) ? (p.meta.mergeGroup || p.meta.NCH_PART) : (p.meta && p.meta.NCH_PART) || 'part';
+
+        // Group by base name, geometry type, and color to prevent visual artifacting
+        let key = baseName + '|' + (p.isLine ? 'line' : 'mesh') + '|' + (p.meta && p.meta.NCH_COLOR ? p.meta.NCH_COLOR : '');
+
+        if (!mergedMap.has(key)) {
+          mergedMap.set(key, {
+            meta: { ...(p.meta || {}), NCH_PART: baseName },
+            positions: [],
+            indices: [],
+            isLine: !!p.isLine,
+            fileSource: p.fileSource
+          });
+        }
+
+        const group = mergedMap.get(key);
+        const indexOffset = group.positions.length / 3;
+
+        // Concatenate physical vertex coordinates
+        if (Array.isArray(p.positions)) group.positions.push(...p.positions);
+
+        // Concatenate and offset indices so triangles connect properly
+        if (Array.isArray(p.indices)) {
+          for (let i = 0; i < p.indices.length; i++) group.indices.push(p.indices[i] + indexOffset);
+        }
+      });
+
+      return Array.from(mergedMap.values());
+    },
+
+    // --- STEP support: tessellate buffer via occt-import-js ---
+    async collectStepParts(fileBuffer, fileName) {
+      const parts = [];
+      try {
+        if (typeof occtimportjs === 'undefined') {
+          console.error('occtimportjs not loaded');
+          return parts;
+        }
+        const occt = await occtimportjs();
+        let res;
+        if (typeof occt.tessellateSTEP === 'function') res = await occt.tessellateSTEP(fileBuffer);
+        else if (typeof occt.importSTEP === 'function') res = await occt.importSTEP(fileBuffer);
+        else if (typeof occt.tessellate === 'function') res = await occt.tessellate(fileBuffer);
+        else res = await occt(fileBuffer);
+        let meshes = [];
+        if (Array.isArray(res)) meshes = res;
+        else if (res && res.meshes) meshes = res.meshes;
+        else if (res && res.positions && res.indices) meshes = [res];
+        let i=0;
+        for (const m of meshes) {
+          const positions = m.positions || m.vertices || m.coords || [];
+          const indices = m.indices || m.triangles || [];
+          if (!positions || !indices || positions.length===0 || indices.length===0) continue;
+          parts.push({ meta: { NCH_PART: (m.name || ((fileName||'step').replace(/\.[^/.]+$/,'')) + (i?`_${i}`:'')) }, positions: Array.from(positions), indices: Array.from(indices), fileSource: fileName });
+          i++;
+        }
+      } catch (err) { console.error('collectStepParts', err); }
+      return parts;
+    },
+
+    addFile(name, rawParts) {
+      this.fileDataList.push({ name, rawParts });
+    },
+
+    removeFile(name) {
+      this.fileDataList = this.fileDataList.filter(f => f.name !== name);
+    },
+
+        buildAllFiles() {
+            const hadModel = !!this.modelBox;
+            while(this.modelGroup.children.length) this.modelGroup.remove(this.modelGroup.children[0]);
+      if (this.fileDataList.length === 0) {
+        this.modelBox = null; this.modelMaxDim = 1; this.globalOffset.set(0,0,0);
+        this.bbox.min.set(0,0,0); this.bbox.max.set(0,0,0); Viewer.updateAxes(1, this.globalOffset);
+        Outliner.build(); ColorManager.rebuild(); ColorManager.renderUI();
+        App.updateFileBar(); SectionManager.loadFromStorage();
+        return;
+      }
+      let allParts = [];
+      this.fileDataList.forEach(f => allParts = allParts.concat(f.rawParts));
+      if (allParts.length === 0) return;
+
+      let minX = Infinity, minY = Infinity, minZ = Infinity;
+      let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+      allParts.forEach(part => {
+          for (let j = 0; j < part.positions.length; j += 3) {
+              const x = part.positions[j], y = part.positions[j+1], z = part.positions[j+2];
+              if (x < minX) minX = x; if (x > maxX) maxX = x;
+              if (y < minY) minY = y; if (y > maxY) maxY = y;
+              if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+          }
+      });
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+      const centerZ = (minZ + maxZ) / 2;
+      this.globalOffset.set(centerX, centerY, centerZ);
+      this.modelMaxDim = Math.max(maxX - minX, maxY - minY, maxZ - minZ);
+      this.bbox.min.set(minX, minY, minZ);
+      this.bbox.max.set(maxX, maxY, maxZ);
+
+      // NOTE: custom creased-normal computation removed — rely on Three.js computeVertexNormals()
+
+      allParts.forEach(part => {
+          if (!part || !Array.isArray(part.positions) || !Array.isArray(part.indices) || part.positions.length === 0 || part.indices.length === 0) return;
+
+          const shiftedPositions = new Float32Array(part.positions.length);
+          for (let j = 0; j < part.positions.length; j += 3) {
+              shiftedPositions[j]   = part.positions[j] - centerX;
+              shiftedPositions[j+1] = part.positions[j+1] - centerY;
+              shiftedPositions[j+2] = part.positions[j+2] - centerZ;
+          }
+
+          // Weld nearly-equal vertices so shared triangle edges are recognized (prevents internal diagonals)
+          const posArr = Array.from(shiftedPositions);
+          const idxArr = Array.from(part.indices);
+          const tol = Math.max(1e-6, (this.modelMaxDim || 1) * 1e-6);
+          const quant = Math.max(1, Math.round(1 / tol));
+          const keyToNew = new Map();
+          const origToNew = new Array(posArr.length / 3);
+          const newPos = [];
+          let newIndex = 0;
+          for (let vi = 0, oi = 0; vi < posArr.length; vi += 3, oi++) {
+            const x = posArr[vi], y = posArr[vi+1], z = posArr[vi+2];
+            const key = `${Math.round(x * quant)}|${Math.round(y * quant)}|${Math.round(z * quant)}`;
+            if (keyToNew.has(key)) {
+              origToNew[oi] = keyToNew.get(key);
+            } else {
+              keyToNew.set(key, newIndex);
+              origToNew[oi] = newIndex;
+              newPos.push(x, y, z);
+              newIndex++;
+            }
+          }
+          const remappedIndices = idxArr.map(i => origToNew[i]);
+
+          const geo = new THREE.BufferGeometry();
+          geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(newPos), 3));
+          geo.setIndex(remappedIndices);
+
+            if (!part.isLine) {
+              geo.computeVertexNormals();
+            }
+
+          const meta = part.meta;
+          const partNo = meta['NCH_PART'] || meta['NCH_PART_NUMBER'] || meta['NCH_PARTNO'] || meta['NCH_NCH_PART'] || meta['NCH_NCH_PART_NUMBER'] || 'Unknown';
+          const thickness = meta['NCH_NCH_THICKNESS'] || 'NoThk';
+          const grade = meta['NCH_NCH_MATERIAL'] || 'NoGrade';
+          const panel = meta['NCH_PANEL'] || meta['NCH_NCH_PANEL'] || meta.midAssy || 'NoMidAssy';
+          const rawSub = meta['NCH_SUBASSEMBLY'] || meta['NCH_NCH_SUBASSEMBLY'] || meta.subAssy || '';
+          const subpanel = meta['NCH_SUBPANEL'] || '';
+          const subAssy = rawSub || subpanel || 'NoSubAssy';
+          const prefixMatch = partNo.match(/^[A-Za-z]+/);
+          const prefix = prefixMatch ? prefixMatch[0].toUpperCase() : 'GENERIC';
+          const wt = meta['NCH_NCH_NETTO-WEIGHT'] || '';
+
+          const pStr = panel === 'NoMidAssy' ? 'NoPanel' : panel;
+          const spStr = subpanel ? subpanel + '-' : '';
+          let richName = `${pStr} - ${spStr}${partNo}-${thickness}mm`;
+          if (wt) richName += `-Wt: ${wt}kg`;
+          if (grade !== 'NoGrade') richName += ` - ${grade}`;
+
+          const rawColor = meta['NCH_COLOR'] || '';
+            const hashStringToColor = (s) => {
+              let h = 0;
+              for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i), h |= 0;
+              const hue = ((h >>> 0) % 360);
+              const col = new THREE.Color();
+              col.setHSL(hue / 360, 0.6, 0.5);
+              return col;
+            };
+
+            let defaultColor;
+            if (rawColor && rawColor.indexOf(' ') !== -1) {
+              const rgb = rawColor.split(' ').map(Number);
+              if (rgb.length >= 3) defaultColor = new THREE.Color(rgb[0]/255, rgb[1]/255, rgb[2]/255);
+              else defaultColor = new THREE.Color(0x909090);
+            } else if (rawColor) {
+              // rawColor present but not RGB (could be ACI index or layer name) - hash to color
+              defaultColor = hashStringToColor(String(rawColor));
+            } else if (meta && meta.DXF_LAYER) {
+              defaultColor = hashStringToColor(String(meta.DXF_LAYER));
+            } else {
+              defaultColor = new THREE.Color(0x909090);
+            }
+
+          let mesh;
+          if (part.isLine) {
+              const lineMat = new THREE.LineBasicMaterial({
+                  color: defaultColor,
+                  clippingPlanes: Object.values(Viewer.clippingPlanes),
+                  clipIntersection: false
+              });
+              mesh = new THREE.LineSegments(geo, lineMat);
+          } else {
+                const mat = new THREE.MeshStandardMaterial({ 
+                  color: defaultColor, 
+                  side: THREE.DoubleSide, 
+                  roughness: 0.55, 
+                  metalness: 0.35,
+                  flatShading: false,
+                  polygonOffset: true, 
+                  polygonOffsetFactor: 1, 
+                  polygonOffsetUnits: 1,
+                  clippingPlanes: Object.values(Viewer.clippingPlanes), 
+                  clipIntersection: false,
+                  clipShadows: true
+                });
+              mesh = new THREE.Mesh(geo, mat);
+
+                const edgeMat = new THREE.LineBasicMaterial({ 
+                  color: 0x000000, 
+                  linewidth: Viewer.thickLineWeight || 2.0,
+                  clippingPlanes: Object.values(Viewer.clippingPlanes), 
+                  clipShadows: true 
+                });
+                // Use degree threshold (30) for EdgesGeometry so only sharp edges are shown
+                const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 30), edgeMat);
+              edges.name = 'edges';
+              edges.visible = ViewEngine.edgesVisible;
+              mesh.add(edges);
+          }
+
+          mesh.userData = {
+              partName: richName, partNo, thickness, grade, midAssy: panel, subAssy,
+              subpanel, prefix, wt, fileSource: part.fileSource || 'Unknown', originalColor: defaultColor.clone(), ...meta
+          };
+          this.modelGroup.add(mesh);
+      });
+
+      this.modelBox = new THREE.Box3().setFromObject(this.modelGroup);
+      Viewer.updateAxes(this.modelMaxDim * 0.5, this.globalOffset);
+      
+      App.updateSun();
+      Outliner.build();
+      ColorManager.rebuild();
+      ColorManager.renderUI();
+      App.updateFileBar();
+      App.reapplyHiddenState();
+    // Position emblem at the model's X-start (min), Y=0, and Z at model top when a file is opened
+    try {
+      if (Viewer && Viewer.emblemLoaded && Viewer.emblemGroup) {
+        const box = this.modelBox;
+        if (box && !box.isEmpty()) {
+          const xStart = box.min.x;
+          const topZ = box.max.z;
+          const y0 = 0;
+          const offset = Math.max((this.modelMaxDim || 1) * 0.05, 10);
+          const ELEVATION_MM = 500; // place emblem 500mm above model top
+          Viewer.emblemGroup.position.set(xStart - offset, y0, topZ + ELEVATION_MM);
+          Viewer.emblemGroup.updateMatrixWorld();
+        }
+      }
+    } catch (e) { /* ignore emblem positioning errors */ }
+    // For the first file open, set an isometric view with extended zoom so the model fits comfortably.
+    // For replacements (hadModel true), keep the previous behavior of switching to side/right unless appending.
+    try {
+      if (!hadModel) {
+        // First file open: use isometric framing (isometric() uses ISO_PADDING multiplier)
+        Camera.isometric();
+      } else if (hadModel && (typeof App === 'undefined' || !App._appendMode)) {
+        Camera.right();
+      }
+    } catch (e) { /* ignore */ }
+      SectionManager.updateRanges();
+      SectionManager.loadFromStorage();
+      App.updateEdgeColors();
+    }
+  };
+
+  // =====================================================
+  // SECTION 32n: APP ROUTING
+  // =====================================================
+  const App = {
+    tool: 'select', navMode: 'orbit', isDraggingZoom: false, prevY: 0,
+    isolatedNode: null, _appendMode: false, contextMesh: null,
+    hiddenStack: [],
+    pickPlaneAxis: null, touchTimer: null, measureHoldTimer: null, touchStartPos: {x:0, y:0},
+    isLensDragging: false, isWheeling: false, wheelTimer: null,
+    
+    isClipped(point) {
+      if (typeof SectionManager === 'undefined' || !SectionManager.hasActiveClip()) return false;
+      const planes = SectionManager.getActivePlanes();
+      for (let i = 0; i < planes.length; i++) {
+          if (planes[i].distanceToPoint(point) < 0) return true;
+      }
+      return false;
+    },
+
+    init() {
+      Viewer.init(); Parser.init(); MeasureTool.init();
+      
+      const sunSettings = loadSettings('sun', { az: 45, el: 30, int: 100 });
+      document.getElementById('sun-azimuth').value = sunSettings.az;
+      document.getElementById('sun-elevation').value = sunSettings.el;
+      document.getElementById('sun-intensity').value = sunSettings.int;
+      this.updateSun();
+
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+          const files = e.target.files;
+          if (!files || files.length === 0) return;
+
+          UI.setLoading('Reading Files...');
+
+          const filePromises = Array.from(files).map(async (f) => {
+            const name = f.name || 'unnamed';
+            const lname = name.toLowerCase();
+            try {
+              // Project files (.3dd / .3dcsl)
+              if (lname.endsWith('.3dd') || lname.endsWith('.3dcsl')) {
+                const buffer = await f.arrayBuffer();
+                const isEncrypted = lname.endsWith('.3dcsl');
+                let text;
+                if (isEncrypted) {
+                  UI.setLoading(`Decrypting ${name}...`);
+                  const data = new Uint8Array(buffer);
+                  const decrypted = await decryptAES(data, ENCRYPTION_PASSWORD);
+                  if (!decrypted) { UI.setLoading(`Failed to decrypt ${name}`); return null; }
+                  text = decrypted;
+                } else {
+                  text = new TextDecoder('utf-8').decode(buffer);
+                }
+                if (!text || !text.includes('I obi')) { UI.setLoading(`Warning: ${name} may not be a valid project file`); return null; }
+                return { type: 'project', name, text };
+              }
+
+              // DXF
+              if (lname.endsWith('.dxf')) {
+                UI.setLoading(`Reading ${name}...`);
+                const txt = await f.text();
+                const parts = Parser.collectDxfParts(txt, name);
+                if (!parts || parts.length === 0) { UI.setLoading(`No geometry found in ${name}`); return null; }
+                return { type: 'parts', name, parts };
+              }
+
+              // STEP/STP
+              if (lname.endsWith('.step') || lname.endsWith('.stp')) {
+                UI.setLoading(`Importing ${name}...`);
+                const buf = await f.arrayBuffer();
+                const parts = await Parser.collectStepParts(buf, name);
+                if (!parts || parts.length === 0) { UI.setLoading(`No geometry found in ${name}`); return null; }
+                return { type: 'parts', name, parts };
+              }
+
+              // Rhino .3dm
+              if (lname.endsWith('.3dm')) {
+                UI.setLoading(`Importing ${name}...`);
+                try {
+                  const buf = await f.arrayBuffer();
+                  const parts = await collect3dmParts(buf, name);
+                  if (!parts || parts.length === 0) { UI.setLoading(`No geometry found in ${name}`); return null; }
+                  return { type: 'parts', name, parts };
+                } catch (err) {
+                  console.error('3dm import error', err);
+                  UI.setLoading(`Error importing ${name}`);
+                  return null;
+                }
+              }
+
+              UI.setLoading(`Unsupported file: ${name}`);
+              return null;
+            } catch (err) {
+              console.error(`Error processing ${name}:`, err);
+              UI.setLoading(`Error: ${err.message || err}`);
+              return null;
+            }
+          });
+
+          const results = await Promise.all(filePromises);
+          const validResults = results.filter(r => r !== null);
+          if (validResults.length === 0) { UI.setLoading('No valid files loaded'); setTimeout(() => UI.setLoading(null), 2000); return; }
+
+          UI.setLoading('Parsing Geometry...');
+          setTimeout(() => {
+            if (!this._appendMode) Parser.fileDataList = [];
+            validResults.forEach(res => {
+              if (res.type === 'project') {
+                const parts = Parser.collectParts(res.text, res.name);
+                if (parts && parts.length > 0) Parser.addFile(res.name, parts);
+              } else if (res.type === 'parts') {
+                Parser.addFile(res.name, res.parts);
+              }
+            });
+            UI.setLoading('Building Scene...');
+            setTimeout(() => {
+              try { Parser.buildAllFiles(); if (ColorManager.applyCurrentMode) ColorManager.applyCurrentMode(); }
+              catch (err) { console.error('Build error:', err); UI.setLoading('Error: ' + err.message); return; }
+              UI.setLoading(null); this._appendMode = false;
+            }, 50);
+          }, 50);
+        });
+
+      const showContext = (clientX, clientY, event) => {
+          if(this.tool !== 'select') return;
+          if (event && event.preventDefault) event.preventDefault();
+          if(!clientX || !clientY) return;
+
+          const mouse = new THREE.Vector2((clientX/window.innerWidth)*2-1, -(clientY/window.innerHeight)*2+1);
+          const raycaster = new THREE.Raycaster(); raycaster.setFromCamera(mouse, Viewer.camera);
+          const hits = raycaster.intersectObjects(Parser.modelGroup.children, false);
+          const visibleHits = hits.filter(hit => hit.object.visible && !this.isClipped(hit.point));
+          
+            const bar = document.getElementById('actions-bar');
+            const getChk = (a) => bar.querySelector(`input[data-action="${a}"]`);
+            const getBtn = (a) => bar.querySelector(`button.icon-btn[data-action="${a}"]`);
+
+            if (visibleHits.length > 0) {
+              this.contextMesh = visibleHits[0].object;
+              if(!Selection.selectedNodes.includes(this.contextMesh)) {
+               Selection.clearSelection();
+               Selection.addNode(this.contextMesh);
+              }
+              // enable actions that require a hit
+              if (getBtn('zoom')) getBtn('zoom').disabled = false;
+              if (getBtn('isolate')) getBtn('isolate').disabled = false;
+              if (getBtn('hide')) getBtn('hide').disabled = !this.contextMesh.visible;
+            } else {
+              // keep previous button states; do not disable icons when clicking empty area
+              this.contextMesh = null;
+            }
+
+            if (this.hiddenStack && this.hiddenStack.length > 0) {
+              if (getBtn('unhide')) getBtn('unhide').disabled = false;
+              if (getBtn('unhide-all')) getBtn('unhide-all').disabled = false;
+            } else {
+              // do not force-disable unhide buttons on empty clicks
+            }
+
+            // do not visually move the actions bar on right-click (no pulse)
+      };
+
+      Viewer.renderer.domElement.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          showContext(e.clientX, e.clientY, e);
+      });
+      Viewer.renderer.domElement.addEventListener('pointercancel', () => {
+          if (this.touchTimer) {
+              clearTimeout(this.touchTimer);
+              this.touchTimer = null;
+          }
+      });
+
+      document.getElementById('context-menu').addEventListener('click', (e) => {
+          const item = e.target.closest('.menu-item');
+          if (!item) return;
+          const action = item.dataset.action;
+          
+              if (action === 'hide') {
+              let hiddenMeshes = [...Selection.selectedNodes];
+              if (hiddenMeshes.length === 0 && this.contextMesh) {
+                  hiddenMeshes = [this.contextMesh];
+              }
+              if (hiddenMeshes.length > 0) {
+                  this.hiddenStack.push(hiddenMeshes.map(m => ({
+                      uuid: m.uuid,
+                      partName: m.userData && m.userData.partName,
+                      partNo: m.userData && m.userData.partNo,
+                      fileSource: m.userData && m.userData.fileSource,
+                      midAssy: m.userData && m.userData.midAssy,
+                      subAssy: m.userData && m.userData.subAssy,
+                      mesh: m
+                  })));
+              }
+              hiddenMeshes.forEach(m => {
+                  m.visible = false;
+                  m.children.forEach(c => c.visible = false);
+              });
+              Outliner.syncUI(); ColorManager.renderUI();
+              Selection.clearSelection();
+          } else if (action === 'unhide') {
+              const lastHidden = this.hiddenStack.pop();
+              if (lastHidden && lastHidden.length > 0) {
+                  lastHidden.forEach(entry => {
+                      const target = Parser.modelGroup.children.find(m => {
+                          const ud = m.userData || {};
+                          return m.uuid === entry.uuid ||
+                               (ud.partName === entry.partName && ud.fileSource === entry.fileSource && ud.partNo === entry.partNo);
+                      }) || entry.mesh;
+                      if (!target) return;
+                      target.visible = true;
+                      target.children.forEach(c => {
+                          if (c.name === 'edges') c.visible = ViewEngine.edgesVisible;
+                          if (c.name === 'sectionEdges') c.visible = ViewEngine.sectionEdgesVisible && SectionManager.hasActiveClip();
+                      });
+                  });
+              }
+              Outliner.syncUI(); ColorManager.renderUI();
+          } else if (action === 'unhide-all') {
+              this.hiddenStack = [];
+              Parser.modelGroup.children.forEach(m => {
+                  m.visible = true;
+                  m.children.forEach(c => {
+                      if (c.name === 'edges') c.visible = ViewEngine.edgesVisible;
+                      if (c.name === 'sectionEdges') c.visible = ViewEngine.sectionEdgesVisible && SectionManager.hasActiveClip();
+                  });
+              });
+              Outliner.syncUI(); ColorManager.renderUI();
+          } else if (action === 'zoom') {
+              Camera.frameObject(Selection.selectedNodes);
+          } else if (action === 'isolate') {
+              if (Selection.selectedNodes.length > 0) {
+                  this.isolateNode('multi', 'isolate', 'Isolated', [...Selection.selectedNodes]);
+              }
+          } else if (action === 'disable-cuts') {
+              ['x','y','z'].forEach(axis => {
+                  if (SectionManager.cuts[axis]) SectionManager.cuts[axis].enabled = false;
+                  const chk = document.getElementById(`cut-${axis}-enable`);
+                  if (chk) chk.checked = false;
+              });
+              const customChk = document.getElementById('cut-c-enable');
+              if (customChk) customChk.checked = false;
+              if (window.SectionManager) {
+                  SectionManager.clearCustomPlane();
+                  SectionManager.apply();
+                  SectionManager.saveToStorage();
+              }
+          }
+          document.getElementById('context-menu').style.display = 'none';
+      });
+
+      // Actions bar: icon buttons run action directly
+      document.querySelectorAll('#actions-bar .icon-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const action = btn.dataset.action;
+          const menuBtn = document.querySelector(`#context-menu [data-action="${action}"]`);
+          if (menuBtn) menuBtn.click();
+        });
+      });
+
+      document.addEventListener('click', (e) => { 
+          if(!e.target.closest('#context-menu')) document.getElementById('context-menu').style.display = 'none'; 
+      });
+
+      Viewer.renderer.domElement.addEventListener('dblclick', (e) => {
+          const mouse = new THREE.Vector2((e.clientX/window.innerWidth)*2-1, -(e.clientY/window.innerHeight)*2+1);
+          const raycaster = new THREE.Raycaster(); raycaster.setFromCamera(mouse, Viewer.camera);
+          const hits = raycaster.intersectObjects(Parser.modelGroup.children, false);
+          const visibleHits = hits.filter(hit => hit.object.visible && !this.isClipped(hit.point));
+          if (visibleHits.length > 0) {
+              const mesh = visibleHits[0].object;
+              this.isolateNode('part', mesh.uuid, mesh.userData.partName || 'Part', [mesh]);
+          } else {
+              this.clearIsolation();
+          }
+      });
+
+        // Touch double-tap support: treat two quick taps as a double-click (isolate)
+        let _lastTouchTap = 0;
+        let _lastTouchPos = { x: 0, y: 0 };
+        Viewer.renderer.domElement.addEventListener('pointerup', (e) => {
+        if (e.pointerType !== 'touch') return;
+        const now = performance.now();
+        const dx = Math.abs(e.clientX - _lastTouchPos.x);
+        const dy = Math.abs(e.clientY - _lastTouchPos.y);
+        const dt = now - _lastTouchTap;
+        _lastTouchTap = now;
+        _lastTouchPos.x = e.clientX; _lastTouchPos.y = e.clientY;
+        // if second tap within 350ms and not moved much, consider double-tap
+        if (dt > 0 && dt < 350 && dx < 30 && dy < 30) {
+          const mouse = new THREE.Vector2((e.clientX/window.innerWidth)*2-1, -(e.clientY/window.innerHeight)*2+1);
+          const raycaster = new THREE.Raycaster(); raycaster.setFromCamera(mouse, Viewer.camera);
+          const hits = raycaster.intersectObjects(Parser.modelGroup.children, false);
+          const visibleHits = hits.filter(hit => hit.object.visible && !App.isClipped(hit.point));
+          if (visibleHits.length > 0) {
+            const mesh = visibleHits[0].object;
+            App.isolateNode('part', mesh.uuid, mesh.userData.partName || 'Part', [mesh]);
+          } else {
+            App.clearIsolation();
+          }
+          e.preventDefault();
+        }
+        });
+
+      window.addEventListener('keydown', (e) => {
+         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+         const key = e.key.toLowerCase();
+         if (key === 'escape') { Selection.clearSelection(); this.setTool('select'); }
+         if (key === 'f') { if (Selection.selectedNodes.length > 0) Camera.frameObject(Selection.selectedNodes); }
+         if (key === 'h' || key === 'delete') { 
+             const hiddenMeshes = [...Selection.selectedNodes];
+             if (hiddenMeshes.length > 0) {
+                 this.hiddenStack.push(hiddenMeshes.map(m => ({
+                     uuid: m.uuid,
+                     partName: m.userData && m.userData.partName,
+                     partNo: m.userData && m.userData.partNo,
+                     fileSource: m.userData && m.userData.fileSource,
+                     midAssy: m.userData && m.userData.midAssy,
+                     subAssy: m.userData && m.userData.subAssy,
+                     mesh: m
+                 })));
+             }
+             hiddenMeshes.forEach(m => {
+                m.visible = false;
+                m.children.forEach(c => c.visible = false);
+             });
+             Selection.clearSelection();
+             Outliner.syncUI(); ColorManager.renderUI();
+         }
+         if (key === ' ') { this.setTool('select'); this.setNavMode('orbit'); e.preventDefault(); }
+      });
+
+      Viewer.renderer.domElement.addEventListener('wheel', (e) => {
+          // Removed navMode check so zoom-to-mouse works globally in ALL tools
+          e.preventDefault();
+          
+          // Temporarily flag scrolling so the measure tool's auto-capture pauses
+          this.isWheeling = true;
+          if (this.wheelTimer) clearTimeout(this.wheelTimer);
+          this.wheelTimer = setTimeout(() => { this.isWheeling = false; }, 200);
+
+          const mouse = new THREE.Vector2((e.clientX/window.innerWidth)*2-1, -(e.clientY/window.innerHeight)*2+1);
+          const raycaster = new THREE.Raycaster(); raycaster.setFromCamera(mouse, Viewer.camera);
+          let pt;
+          const rawHits = raycaster.intersectObjects(Parser.modelGroup.children, true);
+          const hits = rawHits.filter(hit => hit.object.visible && hit.object.name !== 'sectionEdges' && hit.object.name !== 'edges' && !this.isClipped(hit.point));
+          if (hits.length > 0) {
+              pt = hits[0].point;
+          } else {
+              const dist = Viewer.controls.target.distanceTo(Viewer.camera.position);
+              pt = new THREE.Vector3();
+              raycaster.ray.at(dist, pt);
+          }
+          const zoomFactor = e.deltaY > 0 ? 1.15 : 0.85;
+          const dirCam = new THREE.Vector3().subVectors(Viewer.camera.position, pt);
+          Viewer.camera.position.copy(pt).add(dirCam.multiplyScalar(zoomFactor));
+          
+          if (Viewer.isOrtho) {
+              Viewer.orthoCamera.zoom *= (e.deltaY > 0 ? 0.85 : 1.15);
+              Viewer.orthoCamera.updateProjectionMatrix();
+          } else {
+              const dirTarget = new THREE.Vector3().subVectors(Viewer.controls.target, pt);
+              Viewer.controls.target.copy(pt).add(dirTarget.multiplyScalar(zoomFactor));
+          }
+          Viewer.controls.update();
+      }, { passive: false });
+
+      if (!this.touchPointerIds) this.touchPointerIds = new Set();
+
+      Viewer.renderer.domElement.addEventListener('pointermove', e => {
+        UI.updateHUD(e);
+        
+        if (this.touchTimer && (Math.abs(e.clientX - this.touchStartPos.x) > 10 || Math.abs(e.clientY - this.touchStartPos.y) > 10)) {
+            clearTimeout(this.touchTimer); this.touchTimer = null;
+        }
+        if (this.measureHoldTimer && (Math.abs(e.clientX - this.touchStartPos.x) > 10 || Math.abs(e.clientY - this.touchStartPos.y) > 10)) {
+            clearTimeout(this.measureHoldTimer); this.measureHoldTimer = null; // Cancel hold if user starts swiping
+        }
+
+        if (this.isDraggingZoom) {
+            const deltaY = e.clientY - this.prevY; this.prevY = e.clientY;
+            const dir = new THREE.Vector3().subVectors(Viewer.camera.position, Viewer.controls.target);
+            const dist = dir.length();
+            
+            // If dragging to zoom in and we hit the wall, bulldoze the target forward
+            if (deltaY < 0 && dist < 25.0) {
+                const forward = dir.clone().normalize().negate();
+                Viewer.controls.target.addScaledVector(forward, 10.0);
+                Viewer.camera.position.addScaledVector(forward, 10.0);
+            } else {
+                if (deltaY > 0) dir.multiplyScalar(1.05); else if (deltaY < 0) dir.multiplyScalar(0.95);
+                Viewer.camera.position.copy(Viewer.controls.target).add(dir);
+            }
+            
+            if (Viewer.isOrtho) {
+                Viewer.orthoCamera.zoom *= (deltaY > 0 ? 0.95 : 1.05);
+                Viewer.orthoCamera.updateProjectionMatrix();
+            }
+        }
+        
+        if (this.isLensDragging) {
+            MeasureTool.onMove(e, true);
+        } else if (['measure', 'section-pick', 'section-custom'].includes(this.tool)) {
+            // Prevent heavy raycasting (auto-capture) while orbiting, panning, or wheel scrolling to maintain smooth framerates
+            const isOrbiting = (e.pointerType === 'mouse' && (e.buttons === 4 || e.buttons === 2)) || 
+                               (e.pointerType === 'touch' && this.touchPointerIds && this.touchPointerIds.size > 0) ||
+                               this.isWheeling;
+            
+            if (isOrbiting) {
+                // Temporarily hide the snap cursor so it doesn't freeze on the screen during the camera move
+                if (MeasureTool.snapCursor) MeasureTool.snapCursor.visible = false;
+            } else {
+                MeasureTool.onMove(e, false);
+            }
+        } else {
+            if (MeasureTool.snapCursor) MeasureTool.snapCursor.visible = false; 
+            document.getElementById('magnifier-lens').style.display = 'none'; 
+        }
+      });
+      
+      Viewer.renderer.domElement.addEventListener('pointerdown', e => {
+        if (e.pointerType === 'touch') {
+            this.touchPointerIds.add(e.pointerId);
+            const touchCount = this.touchPointerIds.size;
+            if (this.tool === 'measure' && touchCount > 1) {
+                Viewer.controls.enabled = true;
+                this.isLensDragging = false;
+                return;
+            }
+            if (this.tool !== 'measure') {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }
+        this.touchStartPos = {x: e.clientX, y: e.clientY};
+        document.getElementById('canvas-container').classList.add('grabbing');
+        UI.closePanels();
+        
+        if(e.pointerType === 'touch' && this.tool === 'select') {
+            this.touchTimer = setTimeout(() => showContext(e.clientX, e.clientY), 3000);
+        }
+
+        if (this.navMode === 'zoom' && (e.pointerType === 'mouse' || (e.pointerType === 'touch' && this.touchPointerIds && this.touchPointerIds.size === 1))) {
+            this.isDraggingZoom = true;
+            this.prevY = e.clientY;
+            return;
+        }
+        
+        if (['measure', 'section-pick', 'section-custom'].includes(this.tool)) {
+            if (this.tool === 'measure') {
+            if (e.pointerType === 'touch') {
+                Viewer.controls.enabled = true; // Default to orbit
+                this.isLensDragging = false;
+                if (this.touchPointerIds.size === 1) {
+                    // Start a 350ms timer. If they don't swipe, auto-capture the measurement point
+                    this.measureHoldTimer = setTimeout(() => {
+                        Viewer.controls.enabled = false;
+                        this.isLensDragging = true;
+                        if (navigator.vibrate) navigator.vibrate(40); // Haptic feedback on capture
+                        const simEvent = { clientX: this.touchStartPos.x, clientY: this.touchStartPos.y, pointerType: 'touch' };
+                        MeasureTool.onMove(simEvent, true);
+                    }, 350);
+                }
+                return;
+            } else if (e.button === 1 || e.button === 2) {
+                Viewer.controls.enabled = true;
+                this.isLensDragging = false;
+                return;
+            } else {
+                Viewer.controls.enabled = false;
+                this.isLensDragging = true;
+            }
+        } else {
+            Viewer.controls.enabled = false;
+            this.isLensDragging = true;
+        }
+        if (e && e.pointerId !== undefined && Viewer.renderer.domElement.setPointerCapture) {
+            Viewer.renderer.domElement.setPointerCapture(e.pointerId);
+        }
+        MeasureTool.onMove(e, true);
+        return;
+        }
+
+        const mouse = new THREE.Vector2((e.clientX/window.innerWidth)*2-1, -(e.clientY/window.innerHeight)*2+1);
+        const raycaster = new THREE.Raycaster(); raycaster.setFromCamera(mouse, Viewer.camera);
+        const hits = raycaster.intersectObjects(Parser.modelGroup.children, false);
+        const visibleHits = hits.filter(hit => hit.object.visible && !this.isClipped(hit.point));
+        
+        if(visibleHits.length) {
+          const hit = visibleHits[0];
+
+          if(this.navMode === 'orbit') {
+              const dist = Viewer.camera.position.distanceTo(hit.point);
+              const dir = new THREE.Vector3(); Viewer.camera.getWorldDirection(dir);
+              Viewer.controls.target.copy(Viewer.camera.position).add(dir.multiplyScalar(dist));
+              Viewer.controls.update();
+          } else if(this.navMode === 'position') {
+              const p = hit.point;
+              Viewer.camera.position.set(p.x, p.y, p.z + (Parser.modelMaxDim*0.05));
+              Viewer.controls.target.copy(p);
+              this.setNavMode('look');
+          }
+        }
+      });
+      
+      window.addEventListener('pointerup', (e) => { 
+          if (e && e.pointerId !== undefined && this.touchPointerIds) this.touchPointerIds.delete(e.pointerId);
+          if (e && e.pointerId !== undefined && Viewer.renderer.domElement.hasPointerCapture && Viewer.renderer.domElement.hasPointerCapture(e.pointerId)) {
+              Viewer.renderer.domElement.releasePointerCapture(e.pointerId);
+          }
+          this.isDraggingZoom = false; 
+          document.getElementById('canvas-container').classList.remove('grabbing');
+          const cursor = document.getElementById('measure-cursor');
+          if (cursor && (!App || App.tool !== 'measure')) cursor.style.display = 'none';
+          if(this.touchTimer) { clearTimeout(this.touchTimer); this.touchTimer = null; }
+
+          if (this.measureHoldTimer) {
+              clearTimeout(this.measureHoldTimer);
+              this.measureHoldTimer = null;
+              // If released before timer without swiping, treat as a quick tap to drop a point
+              if (this.tool === 'measure' && e.pointerType === 'touch') {
+                  MeasureTool.onMove(e, true, true); // The third 'true' bypasses the 70px offset
+                  if (MeasureTool.lastSnapData) MeasureTool.onClick(MeasureTool.lastSnapData);
+              }
+          }
+
+          if (MeasureTool.ignoreNextPointerUp) {
+              MeasureTool.ignoreNextPointerUp = false;
+              this.isLensDragging = false;
+              Viewer.controls.enabled = true;
+              document.getElementById('magnifier-lens').style.display = 'none';
+              return;
+          }
+          
+          if (this.isLensDragging) {
+              this.isLensDragging = false;
+              Viewer.controls.enabled = true;
+              document.getElementById('magnifier-lens').style.display = 'none';
+              
+              if (MeasureTool.lastSnapData) {
+                  if (this.tool === 'measure') {
+                      MeasureTool.onClick(MeasureTool.lastSnapData);
+                  } else if (this.tool === 'section-pick') {
+                      const pt = MeasureTool.lastSnapData.point.clone().add(Parser.globalOffset);
+                      document.getElementById(`cut-${this.pickPlaneAxis}-enable`).checked = true;
+                      SectionManager.onEnable(this.pickPlaneAxis);
+                      SectionManager.onValue(this.pickPlaneAxis, pt[this.pickPlaneAxis]);
+                      this.setTool('select');
+                  } else if (this.tool === 'section-custom') {
+                      if (MeasureTool.lastHit) {
+                          const normalMatrix = new THREE.Matrix3().getNormalMatrix(MeasureTool.lastHit.object.matrixWorld);
+                          const worldNormal = MeasureTool.lastHit.face.normal.clone().applyMatrix3(normalMatrix).normalize();
+                          SectionManager.setCustomPlane(worldNormal, MeasureTool.lastSnapData.point);
+                          this.setTool('select');
+                      }
+                  }
+              }
+          }
+
+          // ===== NEW SELECTION ON RELEASE LOGIC =====
+          if (this.tool === 'select' && e.target && e.target.closest && e.target.closest('#canvas-container')) {
+              const dx = Math.abs(e.clientX - this.touchStartPos.x);
+              const dy = Math.abs(e.clientY - this.touchStartPos.y);
+              
+              // Only select if it was a quick tap/click, ignoring orbit drags
+              if (dx < 10 && dy < 10) {
+                  const mouse = new THREE.Vector2((e.clientX/window.innerWidth)*2-1, -(e.clientY/window.innerHeight)*2+1);
+                  const raycaster = new THREE.Raycaster(); raycaster.setFromCamera(mouse, Viewer.camera);
+                  const hits = raycaster.intersectObjects(Parser.modelGroup.children, false);
+                  const visibleHits = hits.filter(hit => hit.object.visible && !this.isClipped(hit.point));
+
+                  if(visibleHits.length) {
+                      const hit = visibleHits[0];
+                      // If another finger is still resting on the screen, treat it as a multi-select hold
+                      const isMultiTouch = e.pointerType === 'touch' && this.touchPointerIds && this.touchPointerIds.size > 0;
+                      if (!e.shiftKey && !e.ctrlKey && !e.metaKey && !isMultiTouch) Selection.clearSelection();
+                      Selection.addNode(hit.object);
+                  } else {
+                      Selection.clearSelection();
+                  }
+              }
+          }
+      });
+      
+      window.addEventListener('resize', () => { 
+          Viewer.perspCamera.aspect = window.innerWidth/window.innerHeight; 
+          Viewer.perspCamera.updateProjectionMatrix(); 
+          Viewer.renderer.setSize(window.innerWidth, window.innerHeight); 
+          if(Viewer.isOrtho) {
+              const aspect = window.innerWidth/window.innerHeight;
+              const height = Viewer.orthoCamera.top - Viewer.orthoCamera.bottom;
+              Viewer.orthoCamera.left = -height/2 * aspect;
+              Viewer.orthoCamera.right = height/2 * aspect;
+              Viewer.orthoCamera.updateProjectionMatrix();
+          }
+      });
+      this.animate();
+    },
+
+    setPickPlane(axis) {
+       this.pickPlaneAxis = axis;
+       this.setTool('section-pick');
+       const btns = document.querySelectorAll('.slider-pick-btn');
+       if (btns) btns.forEach(b => b.classList.remove('active'));
+       const btn = document.getElementById(`btn-pick-${axis}`);
+       if (btn) btn.classList.add('active');
+    },
+
+    onSliderChange(axis, value) {
+      SectionManager.onSlider(axis, value);
+    },
+
+    setControlSpeed(type, val) {
+        if(type === 'rotate') Viewer.controls.rotateSpeed = parseFloat(val);
+        if(type === 'zoom') Viewer.controls.zoomSpeed = parseFloat(val);
+    },
+    
+    setTool(t) {
+      this.tool = t;
+      this.isDraggingZoom = false;
+      this.isLensDragging = false;
+      this.touchPointerIds.clear();
+      Viewer.controls.enabled = true;
+
+      const toolbarBtns = document.querySelectorAll('#toolbar .toolButton, .slider-pick-btn');
+      if (toolbarBtns) toolbarBtns.forEach(b => b.classList.remove('active'));
+      
+      if (t === 'section-pick' || t === 'section-custom') {
+          if (t === 'section-custom') {
+              const btn = document.getElementById('btn-section-custom');
+              if (btn) btn.classList.add('active');
+          }
+      } else {
+          const btn = document.getElementById('btn-' + t);
+          if (btn) btn.classList.add('active');
+      }
+      
+      const measureToolbar = document.getElementById('measure-toolbar');
+      const canvasContainer = document.getElementById('canvas-container');
+      if(t === 'measure') {
+          if (measureToolbar) measureToolbar.style.display = 'flex';
+          if (canvasContainer) canvasContainer.classList.add('measure-mode');
+          Viewer.controls.mouseButtons.MIDDLE = THREE.MOUSE.ROTATE; // Enable middle-click orbit
+          UI.closePanels();
+      } else {
+          this.setNavMode(this.navMode); // Restores default middle-click pan/zoom behavior
+          if (measureToolbar) measureToolbar.style.display = 'none';
+          if (canvasContainer) canvasContainer.classList.remove('measure-mode');
+          if (MeasureTool.snapCursor) MeasureTool.snapCursor.visible = false;
+          MeasureTool.hideReadout();
+          MeasureTool.clearPreviewLine();
+          const magLens = document.getElementById('magnifier-lens');
+          if (magLens) magLens.style.display = 'none';
+      }
+
+      if(t === 'select') { 
+          MeasureTool.clear();
+          this.setNavMode('orbit');
+      } 
+    },
+
+    setNavMode(m) {
+      this.navMode = m;
+      ['orbit','pan','zoom','position','look'].forEach(id => document.getElementById('nav-'+id).classList.remove('selected'));
+      document.getElementById('nav-'+m).classList.add('selected');
+      Viewer.controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+      Viewer.controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+      if(m === 'pan') { Viewer.controls.mouseButtons.LEFT = THREE.MOUSE.PAN; Viewer.controls.touches.ONE = THREE.TOUCH.PAN; } 
+      else if (m === 'look') {
+          const dir = new THREE.Vector3().subVectors(Viewer.controls.target, Viewer.camera.position).normalize();
+          Viewer.controls.target.copy(Viewer.camera.position).add(dir.multiplyScalar(0.1));
+      }
+      document.getElementById('statusTool').innerText = `Mode: ${m.charAt(0).toUpperCase()+m.slice(1)}`;
+    },
+    
+    selectNode(type, id, label, meshes) {
+        this.clearIsolation();
+        Selection.clearSelection();
+        meshes.forEach(m => Selection.addNode(m));
+    },
+    
+    isolateNode(type, id, label, meshes) {
+      this.clearIsolation();
+      Selection.clearSelection();
+      meshes.forEach(m => Selection.addNode(m));
+
+      // Record previous visibility of all meshes so we can restore hidden parts later
+      const prevVis = {};
+      const allMeshes = Parser.modelGroup.children;
+      allMeshes.forEach(m => {
+        prevVis[m.uuid] = !!m.visible;
+      });
+
+      allMeshes.forEach(m => {
+        if (meshes.includes(m)) {
+          m.visible = true;
+          m.children.forEach(c => {
+            if (c.name === 'edges') c.visible = ViewEngine.edgesVisible;
+            if (c.name === 'sectionEdges') c.visible = ViewEngine.sectionEdgesVisible && SectionManager.hasActiveClip();
+          });
+        } else {
+          m.visible = false;
+          m.children.forEach(c => c.visible = false);
+        }
+      });
+      this.isolatedNode = { type, id, label, meshes, prevVisibility: prevVis };
+        Outliner.syncUI();
+        ColorManager.renderUI();
+        this.updateEdgeColors();
+    },
+    
+    clearIsolation() {
+      if (this.isolatedNode) {
+        const prev = this.isolatedNode.prevVisibility;
+        this.isolatedNode = null;
+        if (prev) {
+          Parser.modelGroup.children.forEach(m => {
+            const wasVisible = !!prev[m.uuid];
+            m.visible = wasVisible;
+            m.children.forEach(c => {
+              if (!wasVisible) c.visible = false;
+              else {
+                if (c.name === 'edges') c.visible = ViewEngine.edgesVisible;
+                if (c.name === 'sectionEdges') c.visible = ViewEngine.sectionEdgesVisible && SectionManager.hasActiveClip();
+              }
+            });
+          });
+        } else {
+          Parser.modelGroup.children.forEach(m => {
+            m.visible = true;
+            m.children.forEach(c => {
+              if (c.name === 'edges') c.visible = ViewEngine.edgesVisible;
+              if (c.name === 'sectionEdges') c.visible = ViewEngine.sectionEdgesVisible && SectionManager.hasActiveClip();
+            });
+          });
+        }
+        Outliner.syncUI();
+        ColorManager.renderUI();
+        this.updateEdgeColors();
+      }
+    },
+    
+    selectMeshByUUID(uuid) {
+        const mesh = Parser.modelGroup.children.find(m => m.uuid === uuid);
+        if (mesh && mesh.visible) {
+            Selection.clearSelection();
+            Selection.addNode(mesh);
+        }
+    },
+
+    reapplyHiddenState() {
+        if (!this.hiddenStack || this.hiddenStack.length === 0) return;
+
+        this.hiddenStack.forEach(group => {
+            if (!Array.isArray(group)) return;
+            group.forEach(entry => {
+                const target = Parser.modelGroup.children.find(m => {
+                    const ud = m.userData || {};
+                    return m.uuid === entry.uuid ||
+                        (ud.partName === entry.partName && ud.fileSource === entry.fileSource && ud.partNo === entry.partNo);
+                });
+                if (!target) return;
+                target.visible = false;
+                target.children.forEach(c => c.visible = false);
+            });
+        });
+    },
+
+    openFile() {
+        document.getElementById('fileInput').click();
+        this._appendMode = false;
+    },
+
+    async loadSample3dm() {
+      UI.setLoading('Loading sample 3DM...');
+      try {
+        const resp = await fetch('projects/3dm/CB05.3dm');
+        if (!resp.ok) { UI.setLoading('Sample not found'); setTimeout(() => UI.setLoading(null), 1200); return; }
+        const buf = await resp.arrayBuffer();
+        const parts = await collect3dmParts(buf, 'CB05.3dm');
+        if (!parts || parts.length === 0) { UI.setLoading('No geometry in sample'); setTimeout(() => UI.setLoading(null), 1200); return; }
+        Parser.fileDataList = []; Parser.addFile('CB05.3dm', parts); Parser.buildAllFiles(); UI.setLoading(null);
+      } catch (e) { console.error('Load sample 3dm failed', e); UI.setLoading('Error loading sample'); setTimeout(() => UI.setLoading(null), 1200); }
+    },
+
+    addFile() {
+        this._appendMode = true;
+        document.getElementById('fileInput').click();
+    },
+
+    setSelectionColor(hex) {
+        Selection.setHighlightColor(hex);
+        saveSettings('selectionColor', hex);
+    },
+
+    updateSun() {
+        const az = parseFloat(document.getElementById('sun-azimuth').value);
+        const el = parseFloat(document.getElementById('sun-elevation').value);
+        const intensity = parseFloat(document.getElementById('sun-intensity').value);
+        document.getElementById('sun-azimuth-val').innerText = az + '°';
+        document.getElementById('sun-elevation-val').innerText = el + '°';
+        document.getElementById('sun-intensity-val').innerText = intensity + '%';
+        Viewer.updateSun(az, el, intensity);
+        saveSettings('sun', { az, el, int: intensity });
+    },
+
+    updateFileBar() {
+        const container = document.getElementById('file-list');
+        const files = Parser.fileDataList;
+        const stripExtension = (name) => {
+            const cleaned = String(name || '').replace(/\\s+/g, ' ').trim();
+            if (!cleaned) return 'Untitled';
+            return cleaned.replace(/\.(3dd|3dcsl)$/i, '');
+        };
+        if (files.length === 0) {
+            container.innerHTML = 'None loaded';
+            return;
+        }
+        let html = '';
+        files.forEach(f => {
+            const isEncrypted = f.name.toLowerCase().endsWith('.3dcsl');
+            const displayName = stripExtension(f.name);
+            html += `
+                <span class="file-chip" data-file="${f.name}" onclick="App.selectFile('${f.name}')" title="${f.name}">
+                    <span class="material-icons file-icon">${isEncrypted ? 'lock' : 'description'}</span>
+                    ${displayName}
+                    <span class="material-icons close-icon" onclick="event.stopPropagation(); App.closeFile('${f.name}')">close</span>
+                </span>
+            `;
+        });
+        container.innerHTML = html;
+    },
+
+    selectFile(fileName) {
+        const meshes = Parser.modelGroup.children.filter(m => m.userData.fileSource === fileName);
+        if (meshes.length > 0) {
+            Selection.clearSelection();
+            meshes.forEach(m => Selection.addNode(m));
+        }
+    },
+
+    closeFile(fileName) {
+        Parser.removeFile(fileName);
+        Parser.buildAllFiles();
+        Selection.clearSelection();
+    },
+
+    showThemePanel() {
+        UI.togglePanel('panel-view');
+        setTimeout(() => {
+            const themeSection = document.getElementById('theme-list');
+            if (themeSection) themeSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+    },
+
+    // =====================================================
+    // SECTION 32o: DISPLAY PROFILE & EDGE COLOR
+    // =====================================================
+    updateDisplayProfile(value) {
+        Viewer.applyDisplayProfile(value);
+    },
+    
+    setDisplayProfile(profile) {
+        let size = 24;
+        switch(profile) {
+            case 'mobile': size = 6; break;
+            case 'laptop': size = 15; break;
+            case 'desktop': size = 24; break;
+            case 'cinema': size = 32; break;
+            default: size = 24;
+        }
+        document.getElementById('screen-size-slider').value = size;
+        Viewer.applyDisplayProfile(size);
+    },
+    
+    updateThickLine(value) {
+        Viewer.applyThickLine(value);
+    },
+
+    // =====================================================
+    // SECTION 32p: EDGE LINE COLOR ENGINE (for LineSegments)
+    // =====================================================
+    updateEdgeColors() {
+        const mode = document.getElementById('edge-color-mode').value;
+        const solidColor = document.getElementById('edge-solid-color').value;
+        const colorObj = new THREE.Color(solidColor);
+
+        Parser.modelGroup.children.forEach(mesh => {
+            let edgeLine = null;
+            mesh.children.forEach(child => {
+                if (child.name === 'edges' && child.isLineSegments) {
+                    edgeLine = child;
+                }
+            });
+            if (!edgeLine) return;
+
+            if (mode === 'solid') {
+                edgeLine.material.color.copy(colorObj);
+                edgeLine.material.vertexColors = false;
+            } else if (mode === 'material') {
+                edgeLine.material.color.copy(mesh.material.color);
+                edgeLine.material.vertexColors = false;
+            } else if (mode === 'axis') {
+                // Use vertex colors for axis coloring – only for LineSegments
+                // We need to create a color attribute per vertex (two per segment)
+                const geo = edgeLine.geometry;
+                const pos = geo.attributes.position;
+                if (!pos) return;
+                const count = pos.count;
+                const colors = new Float32Array(count * 3);
+                for (let i = 0; i < count; i += 2) {
+                    const p1 = new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i));
+                    const p2 = new THREE.Vector3(pos.getX(i+1), pos.getY(i+1), pos.getZ(i+1));
+                    const dir = new THREE.Vector3().subVectors(p2, p1).normalize();
+                    const ax = Math.abs(dir.x), ay = Math.abs(dir.y), az = Math.abs(dir.z);
+                    let r, g, b;
+                    if (ax >= ay && ax >= az) {
+                        r = 1; g = 0; b = 0; // X = Red
+                    } else if (ay >= ax && ay >= az) {
+                        r = 0; g = 1; b = 0; // Y = Lime Green
+                    } else {
+                        r = 0; g = 0; b = 1; // Z = Blue
+                    }
+                    colors[i*3] = r; colors[i*3+1] = g; colors[i*3+2] = b;
+                    colors[(i+1)*3] = r; colors[(i+1)*3+1] = g; colors[(i+1)*3+2] = b;
+                }
+                geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                edgeLine.material.vertexColors = true;
+                geo.attributes.color.needsUpdate = true;
+            }
+            edgeLine.material.needsUpdate = true;
+        });
+    },
+
+    animate() { 
+        requestAnimationFrame(() => this.animate()); 
+        Viewer.controls.update(); 
+        Viewer.updateAxesScreenSize(); 
+        // rotate emblem if present
+        if (Viewer.emblemLoaded && Viewer.emblemGroup) Viewer.emblemGroup.rotation.z += 0.01;
+        Viewer.renderer.render(Viewer.scene, Viewer.camera); 
+        if(this.tool === 'measure' || this.tool === 'section-pick' || this.tool === 'section-custom') 
+            MeasureTool.updateLabelPos(); 
+    }
+  };
+
+  // =====================================================
+  // SECTION 32q: INITIALIZATION
+  // =====================================================
+  const savedSelectionColor = loadSettings('selectionColor', '#ef5350');
+  document.getElementById('selection-color-picker').value = savedSelectionColor;
+  Selection.setHighlightColor(savedSelectionColor);
+
+  document.getElementById('edge-color-mode').value = 'solid';
+  document.getElementById('edge-solid-color').value = '#000000';
+  if (document.getElementById('section-edge-weight')) document.getElementById('section-edge-weight').value = '2.0';
+  if (typeof ViewEngine !== 'undefined' && ViewEngine.updateSectionEdgeLineWeight) ViewEngine.updateSectionEdgeLineWeight(2.0);
+
+  document.addEventListener('contextmenu', e => e.preventDefault(), { passive: false });
+document.addEventListener('touchstart', e => {
+  if (e.target.closest && e.target.closest('#canvas-container')) {
+    e.preventDefault();
+  }
+}, { passive: false });
+window.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+
+<div id="panel-projects" class="side-panel">
+  <div class="panelTitle">Projects 
+    <button class="panelClose" onclick="UI.togglePanel('panel-projects')"><span class="material-icons">close</span></button>
+  </div>
+  <div id="project-container" style="padding: 10px;">
+    <div style="color:var(--accent);">Loading projects from server...</div>
+  </div>
+</div>
+
+<!-- ProjectManager is implemented in js/main.js; inline duplicate removed -->
+</body>
+</html>
